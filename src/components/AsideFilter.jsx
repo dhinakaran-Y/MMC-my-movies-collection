@@ -1,9 +1,14 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
+import FilteredLanguagesArr from "@/data/FilteredLanguagesArr.json";
+// import Select from "react-select/base";
+import dynamic from "next/dynamic";
+// Import Select dynamically to prevent SSR issues
+const Select = dynamic(() => import("react-select"), { ssr: false });
 
 export default function AsideFilter({
-  languagesArr = [],
+  // languagesArr = [],
   genresArr = [],
   currentLang,
   currentGenre,
@@ -11,6 +16,22 @@ export default function AsideFilter({
   const router = useRouter();
   const searchParams = useSearchParams();
   
+  // language Options Arr
+  const languageOptions = [
+    { value: "", label: "All Languages" },
+    ...FilteredLanguagesArr.map((l) => ({
+      value: l.language,
+      label: l.languageName,
+    })),
+  ];
+
+  console.log(languageOptions);
+
+  // find current selected language based on url
+  const defaultValue =
+    languageOptions.find((opt) => opt.value === currentLang) ||
+    languageOptions[0];
+
   const updateRoute = (key, value) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -29,7 +50,7 @@ export default function AsideFilter({
     else if (key === "genre") {
       params.delete("query"); // Clear search
 
-      // 
+      //
       const currentGenres = params.get("genre")
         ? params
             .get("genre")
@@ -97,6 +118,46 @@ export default function AsideFilter({
         <label className="text-xs font-bold text-white/50 uppercase">
           Language
         </label>
+        <Select
+          id="languageSelect"
+          options={languageOptions}
+          value={defaultValue}
+          placeholder="Search and select language"
+          isSearchable
+          // Use unstyled to remove default React Select borders/colors
+          unstyled
+          classNames={{
+            control: ({ isFocused }) =>
+              `bg-slate-800 text-white p-1 rounded-xl border transition-all ${
+                isFocused ? "border-brand ring-1 ring-brand" : "border-white/10"
+              } cursor-pointer text-sm`,
+            menu: () =>
+              "bg-slate-800 border border-white/10 rounded-xl mt-2 overflow-hidden shadow-2xl",
+            option: ({ isFocused, isSelected }) =>
+              `px-3 py-2 cursor-pointer transition-colors ${
+                isSelected
+                  ? "bg-brand text-white"
+                  : isFocused
+                    ? "bg-white/10 text-white"
+                    : "text-white/70"
+              }`,
+            placeholder: () => "text-white/30 px-2",
+            singleValue: () => "text-white px-2",
+            input: () => "text-white px-2",
+            dropdownIndicator: () => "text-white/40 hover:text-white px-2",
+            clearIndicator: () => "text-white/40 hover:text-brand px-2",
+            noOptionsMessage: () => "text-white/40 p-4",
+          }}
+          onChange={(selectedOption) =>
+            updateRoute("lang", selectedOption.value)
+          }
+        />
+      </div>
+      {/* 2.2. old language dropdown */}
+      {/* <div className="flex flex-col space-y-2 ml-2">
+        <label className="text-xs font-bold text-white/50 uppercase">
+          Language
+        </label>
         <select
           value={currentLang || ""}
           onChange={(e) => updateRoute("lang", e.target.value)}
@@ -108,7 +169,7 @@ export default function AsideFilter({
             </option>
           ))}
         </select>
-      </div>
+      </div> */}
 
       {/* 3. genres*/}
       <div className="flex flex-col space-y-3 ml-2">

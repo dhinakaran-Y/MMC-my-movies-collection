@@ -116,7 +116,7 @@ export default async function Home({ searchParams }) {
     <div className="h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
       {/* Sidebar - Pass query, lang, and genres to manage UI states */}
       <AsideFilter
-        languagesArr={languagesArr}
+        // languagesArr={languagesArr}
         genresArr={genresArr}
         currentLang={language}
         currentGenre={genre}

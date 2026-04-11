@@ -112,6 +112,9 @@ export default async function Home({ searchParams }) {
   const actualTotalPages = movieData.total_pages || 1;
   const displayTotalPages = Math.min(actualTotalPages, apiLimit);
 
+  // console.log(movieArr);
+  
+
   return (
     <div className="h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
       {/* Sidebar - Pass query, lang, and genres to manage UI states */}

@@ -10,7 +10,7 @@ export default function Header() {
   // console.log(path);
 
   return (
-    <header className="2xl:px-10 flex justify-between items-center bg-dark-body1 py-2">
+    <header className="2xl:px-10 flex justify-between items-center bg-dark-body1 border-b border-white/3 shadow py-2">
       {/* left */}
       <div className="flex items-center">
         <Link href="/">

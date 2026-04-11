@@ -1,4 +1,5 @@
 // src/app/(main)/layout.js
+import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 
 export const metadata = {
@@ -14,6 +15,7 @@ export default function MainLayout({ children }) {
     <>
       <Header />
       <main className="flex-1">{children}</main>
+      <Footer/>
     </>
   );
 }

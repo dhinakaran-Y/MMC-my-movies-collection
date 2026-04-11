@@ -71,11 +71,11 @@ export default function MovieCard({ movie }) {
         )}
         {/*OTT Platforms */}
         <div className="p-5 text-center">
-          {providers.length > 0 && (
+          {providers.length > 0 ?? (
             <p className="text-white text-sm font-bold mb-2">Available on:</p>
           )}
           <div className="flex gap-2 justify-center flex-wrap">
-            {providers.length > 0 ? (
+            {providers.length > 0 ?? (
               providers.map((p) => (
                 <Image
                   key={p.provider_id}
@@ -87,10 +87,6 @@ export default function MovieCard({ movie }) {
                   height={40}
                 />
               ))
-            ) : (
-              <span className="text-white/70 text-xs">
-                Streaming Platforms data are not available
-              </span>
             )}
           </div>
         </div>

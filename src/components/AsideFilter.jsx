@@ -25,7 +25,7 @@ export default function AsideFilter({
     })),
   ];
 
-  console.log(languageOptions);
+  // console.log(languageOptions);
 
   // find current selected language based on url
   const defaultValue =

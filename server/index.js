@@ -1,7 +1,7 @@
 import express from "express";
 import "#utils/loadEnvironment";
 import cors from "cors";
-import apiRoutes from "#routers/index.route"
+import apiRoutes from "#routers/index.route";
 
 const PORT = process.env.PORT || 5000;
 const app = express();
@@ -12,6 +12,7 @@ app.use(
   cors({
     origin: [
       "http://localhost:3000",
+      "https://mmc-my-movies-collection.vercel.app",
       // "https://mmc-my-movies-collection.onrender.com",
     ],
     credentials: true,
@@ -24,7 +25,7 @@ app.use(
 app.use(express.json());
 
 //routes
-app.use("/", apiRoutes) 
+app.use("/", apiRoutes);
 
 // listen to server
 app.listen(PORT, () => {

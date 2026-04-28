@@ -3,10 +3,34 @@ import { jwtVerify } from "jose";
 
 async function verifyToken(token) {
   try {
+    if (!process.env.JWT_SECRET) {
+      console.error("🔴 Proxy: JWT_SECRET is not set in environment");
+      return null;
+    }
+    if (!token) {
+      console.error("🔴 Proxy: No token provided");
+      return null;
+    }
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    const { payload } = await jwtVerify(token, secret);
-    return payload;
-  } catch {
+    const verified = await jwtVerify(token, secret);
+
+    if (!verified || !verified.payload) {
+      console.error(
+        "🔴 Proxy: jwtVerify returned invalid structure:",
+        verified,
+      );
+      return null;
+    }
+
+    console.log("✅ Proxy: Token verified successfully. Payload:", {
+      id: verified.payload.id,
+      email: verified.payload.email,
+      role: verified.payload.role,
+    });
+
+    return verified.payload;
+  } catch (err) {
+    console.error("🔴 Proxy: Token verification failed:", err.message);
     return null;
   }
 }
@@ -29,19 +53,28 @@ async function getCollectionVisibility(collectionId) {
   }
 }
 
-export async function middleware(request) {
+export async function proxy(request) {
   const token = request.cookies.get("token")?.value;
   const pathname = request.nextUrl.pathname;
+
+  console.log(
+    `🔍 Proxy: Incoming request to ${pathname}, token exists: ${!!token}`,
+  );
 
   // ─── /collections — root list page, login required ───
   if (pathname === "/collections") {
     if (!token) {
+      console.log("🔴 Proxy: /collections - no token, redirecting to /login");
       return NextResponse.redirect(new URL("/login", request.url));
     }
     const payload = await verifyToken(token);
     if (!payload) {
+      console.log(
+        "🔴 Proxy: /collections - token verification failed, redirecting to /login",
+      );
       return NextResponse.redirect(new URL("/login", request.url));
     }
+    console.log("✅ Proxy: /collections - access granted");
     return NextResponse.next();
   }
 
@@ -63,11 +96,17 @@ export async function middleware(request) {
     // 🔒 Private — must be logged in AND be the owner
     if (collection.visibility === "private") {
       if (!token) {
+        console.log(
+          `🔴 Proxy: Private collection ${collectionId} - no token, redirecting to /not-authorized`,
+        );
         return NextResponse.redirect(new URL("/not-authorized", request.url));
       }
 
       const payload = await verifyToken(token);
       if (!payload) {
+        console.log(
+          `🔴 Proxy: Private collection ${collectionId} - token verification failed`,
+        );
         return NextResponse.redirect(new URL("/login", request.url));
       }
 
@@ -77,6 +116,9 @@ export async function middleware(request) {
         payload.userId?.toString();
 
       if (userId !== collection.ownerId) {
+        console.log(
+          `🔴 Proxy: Private collection - userId ${userId} != ownerId ${collection.ownerId}`,
+        );
         return NextResponse.redirect(new URL("/not-authorized", request.url));
       }
 
@@ -90,27 +132,38 @@ export async function middleware(request) {
   // ─── /admin ───
   if (pathname.startsWith("/admin")) {
     if (!token) {
+      console.log("🔴 Proxy: /admin - no token, redirecting to /login");
       return NextResponse.redirect(new URL("/login", request.url));
     }
     const payload = await verifyToken(token);
     if (!payload) {
+      console.log(
+        "🔴 Proxy: /admin - token verification failed, redirecting to /login",
+      );
       return NextResponse.redirect(new URL("/login", request.url));
     }
     if (payload.role !== "admin") {
+      console.log(`🔴 Proxy: /admin - user role is ${payload.role}, not admin`);
       return NextResponse.redirect(new URL("/not-authorized", request.url));
     }
+    console.log("✅ Proxy: /admin - access granted for admin");
     return NextResponse.next();
   }
 
   // ─── /profile ───
   if (pathname.startsWith("/profile")) {
     if (!token) {
+      console.log("🔴 Proxy: /profile - no token, redirecting to /login");
       return NextResponse.redirect(new URL("/login", request.url));
     }
     const payload = await verifyToken(token);
     if (!payload) {
+      console.log(
+        "🔴 Proxy: /profile - token verification failed, redirecting to /login",
+      );
       return NextResponse.redirect(new URL("/login", request.url));
     }
+    console.log("✅ Proxy: /profile - access granted");
     return NextResponse.next();
   }
 

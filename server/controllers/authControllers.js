@@ -59,21 +59,24 @@ export async function loginUser(req, res) {
       { expiresIn: "1h" },
     );
 
-    // res.cookie("token", token, {
-    //   httpOnly: true,
-    //   maxAge: 60 * 60 * 1000,
-    //   sameSite: "Lax",
-    //   path: "/",
-    // });
-
-    res.cookie("token", token, {
+    // Cookie settings: secure for production (HTTPS), insecure for development (HTTP)
+    const cookieOptions = {
       httpOnly: true,
       maxAge: 60 * 60 * 1000,
-      sameSite:"None", // "None" for cross-origin in prod
-      secure: true, // required when sameSite is "None"
       path: "/",
-    });
+    };
 
+    // For production on HTTPS
+    if (isProd) {
+      cookieOptions.sameSite = "None";
+      cookieOptions.secure = true;
+    } else {
+      // For development on localhost (HTTP)
+      cookieOptions.sameSite = "Lax";
+      cookieOptions.secure = false;
+    }
+
+    res.cookie("token", token, cookieOptions);
     res.json({ message: `User ${user.name} logged in successfully`, token });
   } catch (error) {
     console.error("Error logging in user:", error);

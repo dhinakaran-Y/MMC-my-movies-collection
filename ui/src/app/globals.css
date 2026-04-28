@@ -1,0 +1,33 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand: #e50914;
+  --color-dark-body1: #0b1326;
+  --color-dark-body2: #0F1629;
+  --color-dark-body3: #131B2E;
+  --color-dark-body4: #252E41;
+  --color-gray1: #D9D9D9;
+  --color-yellow1: #FABD00;
+  --color-blue1: #105099;
+  --color-red1: #991017;
+  --color-card: #2D3548;
+}
+
+body {
+  @apply dark:bg-dark-body3 dark:text-white;
+}
+
+.active {
+  @apply text-brand underline hover:text-red-700;
+}
+
+.scroll-bar-hide {
+    &::-webkit-scrollbar {
+        display: none;
+    }
+    
+    scrollbar-width: none;
+    
+    -ms-overflow-style: none;
+}

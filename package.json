@@ -1,24 +1,27 @@
 {
   "name": "my-movies-collection",
-  "version": "0.1.0",
-  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
+    "ui": "cd ui && npm run dev",
+    "server": "cd server && npm run dev",
+    "dev": "concurrently \"npm run ui\" \"npm run server\"",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dhinakaran-Y/MMC-my-movies-collection.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/dhinakaran-Y/MMC-my-movies-collection/issues"
+  },
+  "homepage": "https://github.com/dhinakaran-Y/MMC-my-movies-collection#readme",
   "dependencies": {
-    "lucide-react": "^1.7.0",
-    "next": "16.2.1",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "react-select": "^5.10.2"
-  },
-  "devDependencies": {
-    "@tailwindcss/postcss": "^4",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.1",
-    "tailwindcss": "^4"
+    "concurrently": "^9.2.1"
   }
 }

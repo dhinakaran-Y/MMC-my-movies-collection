@@ -1,0 +1,48 @@
+{
+  "name": "my-movies-collection",
+  "version": "1.0.0",
+  "description": "MMC- server (My Movies Collection)- a specialized movies collection storing website server.",
+  "keywords": [
+    "MMC",
+    "My-Movies-Collection",
+    "movies-collection",
+    "movies-library",
+    "movies-notes-taking-app"
+  ],
+  "homepage": "https://github.com/dhinakaran-Y/MMC-my-movies-collection#readme",
+  "bugs": {
+    "url": "https://github.com/dhinakaran-Y/MMC-my-movies-collection/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dhinakaran-Y/MMC-my-movies-collection.git"
+  },
+  "license": "MIT",
+  "author": "Dhinakaran-Y",
+  "type": "module",
+  "main": "index.js",
+  "imports": {
+    "#routers/*": "./routers/*.js",
+    "#middleware/*": "./middleware/*.js",
+    "#schemas/*": "./schemas/*.js",
+    "#db/*": "./db/*.js",
+    "#utils/*": "./utils/*.js",
+    "#models/*": "./models/*.js",
+    "#controllers/*": "./controllers/*.js"
+  },
+  "scripts": {
+    "dev": "node --watch index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "mongodb": "^7.1.1",
+    "mongoose": "^9.4.1",
+    "node": "^25.9.0",
+    "zod": "^4.3.6"
+  }
+}

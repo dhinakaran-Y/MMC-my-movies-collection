@@ -69,8 +69,8 @@ export async function loginUser(req, res) {
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: 60 * 60 * 1000,
-      sameSite: isProd ? "None" : "Lax", // "None" for cross-origin in prod
-      secure: isProd, // required when sameSite is "None"
+      sameSite:"None", // "None" for cross-origin in prod
+      secure: true, // required when sameSite is "None"
       path: "/",
     });
 
@@ -118,8 +118,8 @@ export function logoutUser(req, res) {
 
   res.clearCookie("token", {
     httpOnly: true,
-    sameSite: isProd ? "None" : "Lax",
-    secure: isProd,
+    sameSite: "None",
+    secure: true,
     path: "/",
   });
 

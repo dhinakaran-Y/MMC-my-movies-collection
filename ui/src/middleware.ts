@@ -175,10 +175,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/collections",
-    "/collections/:path*",
-    "/profile/:path*",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

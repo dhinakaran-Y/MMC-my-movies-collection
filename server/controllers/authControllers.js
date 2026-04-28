@@ -3,8 +3,10 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { json } from "zod";
 import { ObjectId } from "mongodb";
-import Collection from "#models/collection.model"
+import Collection from "#models/collection.model";
 import WatchList from "#models/watchList.model";
+
+const isProd = process.env.NODE_ENV === "production";
 
 // register
 export async function registerUser(req, res) {
@@ -57,10 +59,18 @@ export async function loginUser(req, res) {
       { expiresIn: "1h" },
     );
 
+    // res.cookie("token", token, {
+    //   httpOnly: true,
+    //   maxAge: 60 * 60 * 1000,
+    //   sameSite: "Lax",
+    //   path: "/",
+    // });
+
     res.cookie("token", token, {
       httpOnly: true,
       maxAge: 60 * 60 * 1000,
-      sameSite: "Lax",
+      sameSite: isProd ? "None" : "Lax", // "None" for cross-origin in prod
+      secure: isProd, // required when sameSite is "None"
       path: "/",
     });
 
@@ -86,10 +96,7 @@ export async function getCurrentUser(req, res) {
   console.log("logged in user from /me endpoint:", loggedInUser);
 
   try {
-    const user = await User.findOne(
-      { _id: loggedInUser.id },
-      { password: 0 }, 
-    );
+    const user = await User.findOne({ _id: loggedInUser.id }, { password: 0 });
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
@@ -103,10 +110,18 @@ export async function getCurrentUser(req, res) {
 
 // logout
 export function logoutUser(req, res) {
+  // res.clearCookie("token", {
+  //   httpOnly: true,
+  //   sameSite: "Lax",
+  //   path: "/",
+  // });
+
   res.clearCookie("token", {
     httpOnly: true,
-    sameSite: "Lax",
-    path: "/"
-  })
-  res.json({message: "Logged out successfully"})
+    sameSite: isProd ? "None" : "Lax",
+    secure: isProd,
+    path: "/",
+  });
+
+  res.json({ message: "Logged out successfully" });
 }

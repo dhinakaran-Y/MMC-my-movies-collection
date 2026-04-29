@@ -70,13 +70,21 @@ export async function loginUser(req, res) {
     if (isProd) {
       cookieOptions.sameSite = "None";
       cookieOptions.secure = true;
+      console.log("✅ [LOGIN] Production mode: sameSite=None, secure=true");
     } else {
       // For development on localhost (HTTP)
       cookieOptions.sameSite = "Lax";
       cookieOptions.secure = false;
+      console.log("✅ [LOGIN] Development mode: sameSite=Lax, secure=false");
     }
 
     res.cookie("token", token, cookieOptions);
+    console.log("✅ [LOGIN] Cookie set with options:", cookieOptions);
+    console.log("✅ [LOGIN] Token payload:", {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    });
     res.json({ message: `User ${user.name} logged in successfully`, token });
   } catch (error) {
     console.error("Error logging in user:", error);

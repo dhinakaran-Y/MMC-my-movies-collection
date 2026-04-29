@@ -13,6 +13,7 @@ app.use(
     origin: [
       "http://localhost:3000",
       "https://mmc-my-movies-collection.vercel.app",
+      "https://mmc-my-movies-collections-frontend.vercel.app",
       // "https://mmc-my-movies-collection.onrender.com",
     ],
     credentials: true,

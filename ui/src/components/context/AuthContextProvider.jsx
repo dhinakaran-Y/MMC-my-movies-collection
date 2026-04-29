@@ -49,7 +49,7 @@ export default function AuthContextProvider({ children }) {
 
   const login = async () => {
     const me = await refreshSession();
-    console.log("logging me: ",me);
+    console.log("auth context logging me: ",me);
 
     if (me) {
       router.push("/");

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
+console.log("🔴🔴🔴 MIDDLEWARE FILE LOADED 🔴🔴🔴");
+
 async function verifyToken(token) {
   try {
     if (!process.env.JWT_SECRET) {
@@ -54,6 +56,7 @@ async function getCollectionVisibility(collectionId) {
 }
 
 export async function middleware(request) {
+  console.log("🔴🔴🔴 MIDDLEWARE FUNCTION CALLED 🔴🔴🔴");
   const token = request.cookies.get("token")?.value;
   const pathname = request.nextUrl.pathname;
 

@@ -6,20 +6,20 @@ import apiRoutes from "#routers/index.route";
 const PORT = process.env.PORT || 5000;
 const app = express();
 
-// app.use(cors());
+const ALLOWED_ORIGINS = [
+  "http://localhost:3000",
+  "https://mmc-my-movies-collection.vercel.app",
+  "https://mmc-my-movies-collections-frontend.vercel.app",
+];
 
+// CORS configuration with proper credential handling
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://mmc-my-movies-collection.vercel.app",
-      "https://mmc-my-movies-collections-frontend.vercel.app",
-      // "https://mmc-my-movies-collection.onrender.com",
-    ],
+    origin: ALLOWED_ORIGINS,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-    // Allow all headers during testing to rule out header-based rejection
     allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+    maxAge: 86400, // 24 hours
   }),
 );
 

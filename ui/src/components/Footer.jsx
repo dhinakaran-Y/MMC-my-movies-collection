@@ -2,7 +2,7 @@ export default function Footer(){
   return (
     <footer className="py-5 text-center bg-dark-body1 border-t border-white/3">
       <p className="text-white/40 text-xs uppercase tracking-[0.3em] font-bold">
-        Developed with ❤️ by{" "}
+        Developed for movie lovers - with ❤️ by{" "}
         <a
           href="https://dhinakaran-y.github.io/My-Portfolio/"
           target="blank"

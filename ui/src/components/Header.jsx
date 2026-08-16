@@ -6,6 +6,14 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "./context/AuthContext";
 import { useState } from "react";
 
+function getUserInitials(name) {
+  if (!name || typeof name !== "string") return "G";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "G";
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
 export default function Header() {
   const path = usePathname();
   const { user } = useAuth();
@@ -67,9 +75,20 @@ export default function Header() {
         {/* Right side - mobile*/}
         <div className="flex items-center gap-4">
           <Link href={"/profile"}>
-            <div className="w-9 h-9 rounded-full bg-brand shadow flex justify-center items-center font-bold text-white">
-              {user ? user.name.charAt(0).toUpperCase() : "G"}
-            </div>
+            {user?.profileImage ? (
+              <Image
+                src={user.profileImage}
+                alt={user?.name || "Profile"}
+                width={36}
+                height={36}
+                className="w-9 h-9 rounded-full object-cover border border-white/20 shadow hover:scale-105 transition-transform"
+                unoptimized
+              />
+            ) : (
+              <div className="w-9 h-9 rounded-full bg-brand shadow flex justify-center items-center font-bold text-white text-xs tracking-wider hover:scale-105 transition-transform">
+                {getUserInitials(user?.name)}
+              </div>
+            )}
           </Link>
 
           {/* Hamburger Button*/}

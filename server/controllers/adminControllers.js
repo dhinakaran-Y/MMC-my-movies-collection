@@ -46,10 +46,16 @@ export async function totalCollections(req, res) {
 
 export async function updateUser(req, res) {
   const { id } = req.params;
-  const { name, email, role, password } = req.body;
+  const { name, email, role, password, language, profileImage } = req.body;
 
   try {
     const updateData = { name, email, role };
+    if (language !== undefined) {
+      updateData.language = language;
+    }
+    if (profileImage !== undefined) {
+      updateData.profileImage = profileImage;
+    }
     // Only update password if provided
     if (password) {
       updateData.password = bcrypt.hashSync(password, 10);
@@ -79,15 +85,18 @@ export async function deleteUser(req, res) {
 
 // Update account as a user
 export async function updateMyAccount(req, res) {
-  console.log("hiiii");
-  
   const { id } = req.user; // Get user ID from middleware
-  console.log("middleware-id : ",id);
   
-  const { name, email, password } = req.body;
+  const { name, email, password, language, profileImage } = req.body;
 
   try {
     const updateData = { name, email };
+    if (language !== undefined) {
+      updateData.language = language;
+    }
+    if (profileImage !== undefined) {
+      updateData.profileImage = profileImage;
+    }
     // Only hash and update password if it's provided
     if (password && password.trim() !== "") {
       updateData.password = bcrypt.hashSync(password, 10);

@@ -4,12 +4,14 @@ import { useSearchParams, useRouter } from "next/navigation";
 import FilteredLanguagesArr from "@/data/FilteredLanguagesArr.json";
 import dynamic from "next/dynamic";
 import { useState, useRef, useEffect } from "react";
+import { useAuth } from "@/components/context/AuthContext";
 
 const Select = dynamic(() => import("react-select"), { ssr: false });
 
 export default function AsideFilter({ genresArr = [], currentLang, Genre }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
   const [isGenresOpen, setIsGenresOpen] = useState(true); // Toggle State
 
   // Search state for controlled input
@@ -26,15 +28,19 @@ export default function AsideFilter({ genresArr = [], currentLang, Genre }) {
   }, []);
 
   const languageOptions = [
-    { value: "", label: "All Languages" },
+    { value: "all", label: "All Languages" },
     ...FilteredLanguagesArr.map((l) => ({
       value: l.language,
       label: l.languageName,
     })),
   ];
 
+  const activeLang = searchParams.has("lang")
+    ? (currentLang || "all")
+    : (user?.language || "all");
+
   const defaultValue =
-    languageOptions.find((opt) => opt.value === currentLang) || languageOptions[0];
+    languageOptions.find((opt) => opt.value === activeLang) || languageOptions[0];
 
   const updateRoute = (key, value) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -65,7 +71,7 @@ export default function AsideFilter({ genresArr = [], currentLang, Genre }) {
       }
     } else {
       params.delete("query");
-      if (value && value !== "") params.set(key, value);
+      if (value) params.set(key, value);
       else params.delete(key);
     }
 

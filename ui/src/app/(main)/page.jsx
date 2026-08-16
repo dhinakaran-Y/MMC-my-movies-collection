@@ -124,7 +124,7 @@ export default async function Home({ searchParams }) {
 
   const currentPage = Number(params.page) || 1;
   const isTopRated = params.topRated === "true";
-  const language = params.lang || "";
+  const language = params.lang === "all" ? "" : (params.lang || "");
   const query = params.query || "";
   const genre = params.genre || "";
 

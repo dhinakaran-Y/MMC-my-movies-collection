@@ -84,8 +84,8 @@ export default function ProfileDiv() {
         <div className="flex flex-col items-center text-center">
           <div className="relative">
             <Image
-              className="rounded-full p-1 shadow-lg shadow-brand/10"
-              src="/profile-img.png"
+              className="rounded-full p-1 shadow-lg shadow-brand/10 object-cover w-35 h-35"
+              src={user?.profileImage || "/profile-img.png"}
               alt="Profile Avatar"
               width={140}
               height={140}

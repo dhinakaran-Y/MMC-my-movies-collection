@@ -25,16 +25,25 @@ export default function HomeGrid({ movieArr, currentPage, displayTotalPages }) {
     setTotalPages(displayTotalPages || 1);
   }, [movieArr, displayTotalPages]);
 
-  // Client-side fallback: if server-side fetch failed (empty movieArr), fetch directly in browser
+  // Client-side fallback: if server-side fetch returned generic movies, but logged-in user has a preferred language,
+  // fetch preferred language movies directly in browser!
   useEffect(() => {
-    if (movieArr && movieArr.length > 0) return;
+    const hasLangParam = searchParams.has("lang");
+    const preferredLang = user?.language || "";
+
+    // If explicit ?lang param exists in URL OR user has no preferred language set, use SSR movieArr if available
+    if (hasLangParam || !preferredLang) {
+      if (movieArr && movieArr.length > 0) return;
+    }
 
     let isMounted = true;
     setLoadingFallback(true);
 
     const page = Number(searchParams.get("page")) || 1;
     const topRated = searchParams.get("topRated") === "true";
-    const lang = searchParams.get("lang") || "";
+    const lang = hasLangParam
+      ? (searchParams.get("lang") === "all" ? "" : (searchParams.get("lang") || ""))
+      : preferredLang;
     const query = searchParams.get("query") || "";
     const genre = searchParams.get("genre") || "";
 
@@ -75,7 +84,7 @@ export default function HomeGrid({ movieArr, currentPage, displayTotalPages }) {
     return () => {
       isMounted = false;
     };
-  }, [movieArr, searchParams]);
+  }, [movieArr, searchParams, user?.language]);
 
   return (
     <main className="col-span-full lg:col-span-9 lg:h-full lg:overflow-y-auto p-8 custom-scrollbar">

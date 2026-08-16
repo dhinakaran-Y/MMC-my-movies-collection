@@ -46,7 +46,7 @@ async function getMovieDetails(movieId) {
   try {
     const res = await fetch(
       `https://api.themoviedb.org/3/movie/${movieId}?api_key=${process.env.TMDB_API_KEY}`,
-      { next: { revalidate: 3600 } },
+      { next: { revalidate: 86400 } },
     );
     if (!res.ok) return null;
     return res.json();

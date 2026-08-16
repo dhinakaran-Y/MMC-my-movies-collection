@@ -23,47 +23,39 @@ export default function CollectionGrid() {
   const { user } = useAuth();
   const router = useRouter();
 
-  // 1. Fetch Collections
-  const fetchCollections = async () => {
+  // Parallel Data Loading (Collections + WatchList Count)
+  const loadGridData = async () => {
     if (!user?._id) return;
     try {
       setLoading(true);
-      const res = await fetch(`/api/get-collections/${user._id}`, {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.success) {
-        setCollections(data.collections || []);
+      const [colRes, watchRes] = await Promise.all([
+        fetch(`/api/get-collections/${user._id}`, { credentials: "include" }),
+        fetch(`/api/watch-list/${user._id}`, { credentials: "include" }),
+      ]);
+
+      const [colData, watchData] = await Promise.all([
+        colRes.json(),
+        watchRes.json(),
+      ]);
+
+      if (colData.success) {
+        setCollections(colData.collections || []);
+      }
+      if (watchData.movies) {
+        setWatchedMoviesCount(watchData.movies.length);
       }
     } catch (error) {
-      console.error("Error fetching collections:", error);
+      console.error("Error loading collections data:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. Fetch WatchList Count
-  const fetchWatchList = async () => {
-    if (!user?._id) return;
-    try {
-      const res = await fetch(`/api/watch-list/${user._id}`, {
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (data.movies) {
-        setWatchedMoviesCount(data.movies.length);
-      }
-    } catch (error) {
-      console.error("Failed to fetch watchlist:", error);
-    }
-  };
-
   useEffect(() => {
     if (user?._id) {
-      fetchCollections();
-      fetchWatchList();
+      loadGridData();
     }
-  }, [user]);
+  }, [user?._id]);
 
   // 3. Create / Update Handler
   const handleCollectionSubmit = async (data) => {
@@ -86,7 +78,7 @@ export default function CollectionGrid() {
     if (res.ok) {
       setIsOpen(false);
       setEditingData(null);
-      fetchCollections();
+      loadGridData();
     }
   };
 
@@ -97,7 +89,7 @@ export default function CollectionGrid() {
       method: "DELETE",
       credentials: "include",
     });
-    fetchCollections();
+    loadGridData();
   };
 
   const handleEditClick = (col) => {

@@ -5,17 +5,28 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { jwtVerify } from "jose";
 
-const APP_BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "http://localhost:5000";
+
+function getApiUrl(subpath) {
+  const cleanPath = subpath.startsWith("/api/")
+    ? subpath.replace(/^\/api/, "")
+    : subpath.startsWith("/")
+      ? subpath
+      : `/${subpath}`;
+  const base = BACKEND_URL.replace(/\/$/, "");
+  return base.endsWith("/api") ? `${base}${cleanPath}` : `${base}${cleanPath}`;
+}
 
 export async function generateMetadata({ params }) {
   const { collectionId } = await params;
 
   try {
-    const res = await fetch(
-      new URL(`/api/collection/${collectionId}`, APP_BASE_URL).toString(),
-      { cache: "no-store" },
-    );
+    const res = await fetch(getApiUrl(`/collection/${collectionId}`), {
+      cache: "no-store",
+    });
 
     if (!res.ok) return { title: "Collection | MovieCollection" };
 
@@ -58,20 +69,18 @@ async function verifyToken(token) {
 
 async function getCollectionData(collectionId, cookieString) {
   try {
-    const colRes = await fetch(
-      new URL(`/api/collection/${collectionId}`, APP_BASE_URL).toString(),
-      {
-        method: "GET",
-        cache: "no-store",
-        headers: { Cookie: cookieString },
-      },
-    );
+    const colRes = await fetch(getApiUrl(`/collection/${collectionId}`), {
+      method: "GET",
+      cache: "no-store",
+      headers: { Cookie: cookieString },
+    });
 
     if (!colRes.ok) return { error: colRes.status };
 
     const colData = await colRes.json();
     return { data: colData.data };
-  } catch {
+  } catch (err) {
+    console.error("getCollectionData error:", err);
     return { error: 500 };
   }
 }

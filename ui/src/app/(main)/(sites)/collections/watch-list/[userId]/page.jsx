@@ -2,8 +2,20 @@ import ShareButton from "@/components/CollectionComponents/ShareBtn";
 import WatchListCollectionGrid from "./watchListCollectionGrid";
 import { cookies } from "next/headers";
 
-const APP_BASE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+const BACKEND_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  "http://localhost:5000";
+
+function getApiUrl(subpath) {
+  const cleanPath = subpath.startsWith("/api/")
+    ? subpath.replace(/^\/api/, "")
+    : subpath.startsWith("/")
+      ? subpath
+      : `/${subpath}`;
+  const base = BACKEND_URL.replace(/\/$/, "");
+  return base.endsWith("/api") ? `${base}${cleanPath}` : `${base}${cleanPath}`;
+}
 
 export async function generateMetadata() {
   return {
@@ -29,21 +41,19 @@ async function getMovieDetails(movieId) {
 // ── Extracted fetcher — pure data, no JSX ─────────────────────────────────
 async function getWatchListData(userId, token) {
   try {
-    const res = await fetch(
-      new URL(`/api/watch-list/${userId}`, APP_BASE_URL).toString(),
-      {
-        cache: "no-store",
-        headers: {
-          Cookie: `token=${token}`,
-        },
+    const res = await fetch(getApiUrl(`/watch-list/${userId}`), {
+      cache: "no-store",
+      headers: {
+        Cookie: `token=${token}`,
       },
-    );
+    });
 
     if (!res.ok) return { error: res.status };
 
     const data = await res.json();
     return { data };
-  } catch {
+  } catch (err) {
+    console.error("getWatchListData error:", err);
     return { error: 500 };
   }
 }

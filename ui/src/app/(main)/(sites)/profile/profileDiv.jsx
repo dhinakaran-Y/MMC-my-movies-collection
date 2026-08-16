@@ -28,8 +28,10 @@ export default function ProfileDiv() {
           fetch(`/api/watch-list/${user._id}`, { credentials: "include" }),
         ]);
 
-        const colData = await colRes.json();
-        const watchData = await watchRes.json();
+        const [colData, watchData] = await Promise.all([
+          colRes.json(),
+          watchRes.json(),
+        ]);
 
         setCollectionCount(colData.collections?.length || 0);
         setWatchedCount(watchData.movies?.length || 0);

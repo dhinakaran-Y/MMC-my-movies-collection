@@ -117,7 +117,8 @@ export default function LoginDiv() {
           const expirationDate = new Date();
           expirationDate.setTime(expirationDate.getTime() + 60 * 60 * 1000);
           const expires = expirationDate.toUTCString();
-          document.cookie = `token=${result.token}; path=/; expires=${expires}`;
+          const isHttps = typeof window !== "undefined" && window.location.protocol === "https:";
+          document.cookie = `token=${result.token}; path=/; expires=${expires}; SameSite=Lax; ${isHttps ? "Secure;" : ""}`;
           console.log("✅ [Login] Cookie set manually (frontend fallback)");
         } else if (tokenCookie) {
           console.log("✅ [Login] Cookie already set by server");

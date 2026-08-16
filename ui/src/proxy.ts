@@ -166,18 +166,6 @@ export async function middleware(request) {
 
   // ─── /profile ───
   if (pathname.startsWith("/profile")) {
-    if (!token) {
-      console.log("🔴 Middleware: /profile - no token, redirecting to /login");
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-    const payload = await verifyToken(token);
-    if (!payload) {
-      console.log(
-        "🔴 Middleware: /profile - token verification failed, redirecting to /login",
-      );
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-    // console.log("✅ Middleware: /profile - access granted");
     return NextResponse.next();
   }
 

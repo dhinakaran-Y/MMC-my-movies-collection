@@ -49,6 +49,7 @@ export default function UserEditForm({
               type="text"
               defaultValue={initialData?.name}
               required
+              autoFocus
               className="w-full px-4 py-3 bg-dark-body1 border border-white/10 text-white rounded-xl outline-none focus:ring-2 focus:ring-brand"
             />
           </div>

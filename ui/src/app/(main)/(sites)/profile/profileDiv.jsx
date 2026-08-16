@@ -24,8 +24,8 @@ export default function ProfileDiv() {
       if (!user?._id) return;
       try {
         const [colRes, watchRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/get-collections/${user._id}`,{credentials:"include"}),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/watch-list/${user._id}`,{credentials:"include"}),
+          fetch(`/api/get-collections/${user._id}`, { credentials: "include" }),
+          fetch(`/api/watch-list/${user._id}`, { credentials: "include" }),
         ]);
 
         const colData = await colRes.json();
@@ -47,7 +47,7 @@ export default function ProfileDiv() {
     console.log("formdata : ", data);
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/user/update`, {
+      const res = await fetch(`/api/user/update`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -90,6 +90,7 @@ export default function ProfileDiv() {
               width={140}
               height={140}
               priority
+              unoptimized
             />
             {/* Edit Trigger - You can put this here or near the name */}
             <div

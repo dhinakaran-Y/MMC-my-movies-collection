@@ -1,52 +1,119 @@
 import Link from "next/link";
 import SingleCollectionPageGrid from "./SingleCollectionPageGrid";
 import ShareButton from "@/components/CollectionComponents/ShareBtn";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { jwtVerify } from "jose";
+
+const APP_BASE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
 export async function generateMetadata({ params }) {
   const { collectionId } = await params;
 
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/collection/${collectionId}`,
-    { cache: "no-store" },
-  );
-  const data = await res.json();
-  const name = data.data?.collectionName || "Collection";
+  try {
+    const res = await fetch(
+      new URL(`/api/collection/${collectionId}`, APP_BASE_URL).toString(),
+      { cache: "no-store" },
+    );
 
-  return {
-    title: `${name} | MovieCollection`,
-    description: `Browse the ${name} movie collection.`,
-  };
+    if (!res.ok) return { title: "Collection | MovieCollection" };
+
+    const data = await res.json();
+    const name = data.data?.collectionName || "Collection";
+
+    return {
+      title: `${name} | MovieCollection`,
+      description: `Browse the ${name} movie collection.`,
+    };
+  } catch {
+    return { title: "Collection | MovieCollection" };
+  }
 }
 
 async function getMovieDetails(movieId) {
-  const res = await fetch(
-    `https://api.themoviedb.org/3/movie/${movieId}?api_key=${process.env.TMDB_API_KEY}`,
-    { next: { revalidate: 3600 } },
-  );
-  if (!res.ok) return null;
-  return res.json();
+  try {
+    const res = await fetch(
+      `https://api.themoviedb.org/3/movie/${movieId}?api_key=${process.env.TMDB_API_KEY}`,
+      { next: { revalidate: 3600 } },
+    );
+    if (!res.ok) return null;
+    return res.json();
+  } catch {
+    return null;
+  }
+}
+
+// Extracted fetcher — no JSX, just data 
+async function verifyToken(token) {
+  if (!token || !process.env.JWT_SECRET) return null;
+  try {
+    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const verified = await jwtVerify(token, secret);
+    return verified?.payload || null;
+  } catch {
+    return null;
+  }
+}
+
+async function getCollectionData(collectionId, cookieString) {
+  try {
+    const colRes = await fetch(
+      new URL(`/api/collection/${collectionId}`, APP_BASE_URL).toString(),
+      {
+        method: "GET",
+        cache: "no-store",
+        headers: { Cookie: cookieString },
+      },
+    );
+
+    if (!colRes.ok) return { error: colRes.status };
+
+    const colData = await colRes.json();
+    return { data: colData.data };
+  } catch {
+    return { error: 500 };
+  }
 }
 
 export default async function SingleCollectionPage({ params }) {
   const { collectionId } = await params;
 
-  const colRes = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/collection/${collectionId}`,
-    { cache: "no-store" },
+  const cookieStore = await cookies();
+  const cookieString = cookieStore.toString();
+
+  // ── All data fetching done outside JSX ─────────────────────────────────
+  const { data: collection, error } = await getCollectionData(
+    collectionId,
+    cookieString,
   );
 
-  if (!colRes.ok) {
+  // ── Error state — JSX safely outside try/catch ─────────────────────────
+  if (error) {
     return (
       <section className="min-h-screen flex items-center justify-center">
-        <p className="text-white text-xl">Collection not found.</p>
+        <p className="text-white text-xl">
+          {error === 401
+            ? "Please log in to view this."
+            : "Collection not found."}
+        </p>
       </section>
     );
   }
 
-  const colData = await colRes.json();
-  const collection = colData.data;
+  const token = cookieStore.get("token")?.value;
+  if (collection.visibility === "private") {
+    const payload = await verifyToken(token);
+    const userId =
+      payload?._id?.toString() ||
+      payload?.id?.toString() ||
+      payload?.userId?.toString();
 
-  // Fetch all movie details in parallel, filter out any failed fetches
+    if (!userId || userId !== collection.ownerId?.toString()) {
+      redirect("/not-authorized");
+    }
+  }
+
   const moviesList =
     collection.moviesList?.length > 0
       ? (await Promise.all(collection.moviesList.map(getMovieDetails))).filter(
@@ -56,17 +123,7 @@ export default async function SingleCollectionPage({ params }) {
 
   return (
     <section className="max-w-7xl flex-col mx-auto px-6 py-16 min-h-screen">
-      {/* Share button — only for public collections */}
-      {collection.visibility === "public" && (
-        <div className="float-end">
-          <ShareButton
-            title={collection.collectionName}
-            text={`Check out my movie collection: ${collection.collectionName}`}
-          />
-        </div>
-      )}
-
-      <div className="mb-12 text-center">
+      <div className="mb-12 text-center space-y-4 relative">
         <h2 className="flex items-center justify-center gap-3 text-4xl font-bold text-white tracking-tight">
           <span className="text-brand">
             {collection.collectionName} —{" "}
@@ -78,6 +135,17 @@ export default async function SingleCollectionPage({ params }) {
             Showing {moviesList.length} movies
           </p>
         )}
+
+        {collection.visibility === "public" && (
+          <div className="md:absolute md:top-2 md:right-4">
+            <ShareButton
+              title={collection.collectionName}
+              text={`Check out my movie collection: ${collection.collectionName}`}
+            />
+          </div>
+        )}
+
+        {/* if user visibility is private check the useAuth userId and collection owner Id  and show content only if they match else redirect to not-authorized */}
       </div>
 
       {moviesList.length === 0 ? (

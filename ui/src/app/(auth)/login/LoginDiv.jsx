@@ -85,23 +85,54 @@ export default function LoginDiv() {
     setServerError("");
 
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/login`, {
+      console.log("🔵 [Login] Submitting login request...");
+      console.log("🔵 [Login] Cookies before login:", document.cookie);
+
+      const res = await fetch(`/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
         body: JSON.stringify({ email: data.email, password: data.password }),
       });
 
+      console.log("🔵 [Login] Response status:", res.status);
+      console.log("🔵 [Login] Response headers:", res.headers);
+
       const result = await res.json();
+      console.log("🔵 [Login] Response body:", result);
+      console.log("🔵 [Login] Cookies after login:", document.cookie);
 
       if (res.ok) {
+        // FALLBACK: If cookie wasn't set by backend, set it manually from response
+        const tokenCookie = document.cookie
+          .split(";")
+          .find((c) => c.trim().startsWith("token="));
+
+        if (!tokenCookie && result.token) {
+          console.log(
+            "⚠️ [Login] Cookie not set by server, setting manually...",
+          );
+          // Set cookie with 1-hour expiration (matching backend)
+          // Note: JavaScript can't set SameSite=None; server must do that
+          const expirationDate = new Date();
+          expirationDate.setTime(expirationDate.getTime() + 60 * 60 * 1000);
+          const expires = expirationDate.toUTCString();
+          document.cookie = `token=${result.token}; path=/; expires=${expires}`;
+          console.log("✅ [Login] Cookie set manually (frontend fallback)");
+        } else if (tokenCookie) {
+          console.log("✅ [Login] Cookie already set by server");
+        }
+
+        console.log("✅ [Login] Success! Calling auth context login()...");
         await login();
+        console.log("✅ [Login] Redirecting to home...");
         router.push("/");
       } else {
         setServerError(result.error || "Login failed. Please try again.");
+        console.error("🔴 [Login] Error:", result.error);
       }
     } catch (error) {
-      console.error("Login Error:", error.message);
+      console.error("🔴 [Login] Error:", error.message);
       setServerError(
         "Unable to connect to the server. Please try again later.",
       );
@@ -146,6 +177,7 @@ export default function LoginDiv() {
           <input
             id="email"
             type="email"
+            autoFocus
             placeholder="name@example.com"
             className={`w-full px-4 py-3 rounded-xl border bg-dark-body1 text-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-white/20 ${
               errors.email ? "border-red-500/60" : "border-white/20"

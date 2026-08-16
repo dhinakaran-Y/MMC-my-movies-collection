@@ -1,68 +1,93 @@
+import ShareButton from "@/components/CollectionComponents/ShareBtn";
 import WatchListCollectionGrid from "./watchListCollectionGrid";
-import { cookies } from 'next/headers';
+import { cookies } from "next/headers";
 
-export async function generateMetadata({ params }) {
+const APP_BASE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
+
+export async function generateMetadata() {
   return {
     title: `WatchList | MovieCollection`,
     description: `A users' watched movies list collection`,
   };
 }
 
-// Helper to fetch details from TMDB
+// ── Fetch single movie details from TMDB ───────────────────────────────────
 async function getMovieDetails(movieId) {
   try {
     const res = await fetch(
       `https://api.themoviedb.org/3/movie/${movieId}?api_key=${process.env.TMDB_API_KEY}`,
+      { next: { revalidate: 3600 } },
     );
+    if (!res.ok) return null;
     return await res.json();
-  } catch (error) {
-    return null; // Return null if a specific movie fetch fails
+  } catch {
+    return null;
+  }
+}
+
+// ── Extracted fetcher — pure data, no JSX ─────────────────────────────────
+async function getWatchListData(userId, token) {
+  try {
+    const res = await fetch(
+      new URL(`/api/watch-list/${userId}`, APP_BASE_URL).toString(),
+      {
+        cache: "no-store",
+        headers: {
+          Cookie: `token=${token}`,
+        },
+      },
+    );
+
+    if (!res.ok) return { error: res.status };
+
+    const data = await res.json();
+    return { data };
+  } catch {
+    return { error: 500 };
   }
 }
 
 export default async function WatchListPage({ params }) {
   const { userId } = await params;
 
-  // 2. Get the cookies from the incoming request
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
 
-  // 1. Fetch the list of movie IDs from your Express backend
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_API_URL}/watch-list/${userId}`,
-    {
-      headers: {
-        Cookie: `token=${token}`, // Pass the token manually
-      },
-      cache: "no-store",
-    },
-  );
+  // ── All data fetching done outside JSX ─────────────────────────────────
+  const { data, error } = await getWatchListData(userId, token);
 
-  if (!res.ok)
+  // ── Error state — JSX safely outside try/catch ─────────────────────────
+  if (error) {
     return (
       <div className="text-white text-center mt-[30vh]">
-        Failed to load list.
+        {error === 401
+          ? "Please log in to view your watchlist."
+          : "Failed to load list."}
       </div>
     );
+  }
 
-  const data = await res.json();
-  console.log(res, data);
   const moviesIds = data.movies || [];
 
-  // 2. Fetch full movie details for every ID from TMDB
-  const moviesList =
-    moviesIds.length > 0
-      ? await Promise.allSettled(moviesIds.map((id) => getMovieDetails(id)))
-      : [];
+  const movieResults = await Promise.allSettled(
+    moviesIds.map((id) => getMovieDetails(id)),
+  );
 
-  // Filter out any nulls if a TMDB fetch failed
-  const validMovies = moviesList
+  const validMovies = movieResults
     .filter((res) => res.status === "fulfilled" && res.value !== null)
     .map((res) => res.value);
 
-  console.log("get watched list", moviesIds, moviesList, validMovies);
   return (
     <section className="max-w-7xl mx-auto px-6 py-16 min-h-screen">
+      {/* share btn*/}
+      {/* <div className="float-end">
+        <ShareButton
+          title={"WatchList"}
+          text={`Check out my movie collection: ${"WatchList"}`}
+        />
+      </div> */}
+      {/* header */}
       <div className="mb-12 text-center">
         <h2 className="text-4xl font-bold text-white tracking-tight">
           <span className="text-brand">My Watched Movies</span>
@@ -73,6 +98,7 @@ export default async function WatchListPage({ params }) {
             : "Your watchList is empty."}
         </p>
       </div>
+
       {validMovies.length > 0 ? (
         <WatchListCollectionGrid moviesList={validMovies} />
       ) : (

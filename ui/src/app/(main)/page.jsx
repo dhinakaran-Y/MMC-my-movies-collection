@@ -8,6 +8,19 @@ import LanguageRegionMappedData from "@/data/LanguageRegionMappedData.json";
 const API_KEY = process.env.TMDB_API_KEY;
 const BASE_URL = "https://api.themoviedb.org/3";
 
+async function fetchWithRetry(url, options = {}, retries = 5, delayMs = 500) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.ok) return res;
+      if (attempt === retries) return res;
+    } catch (error) {
+      if (attempt === retries) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+}
+
 /* getMovies Fn
  * 1. search query
  * 2. genre filtering
@@ -29,7 +42,12 @@ async function getMovies(
     url = `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
   }
 
-  // 2. discover - Filter
+  // 2. Top Rated (Global - no other filters applied)
+  else if (topRated && !lang && !genre) {
+    url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&page=${page}`;
+  }
+
+  // 3. Discover - Filter
   else {
     url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&page=${page}`;
 
@@ -38,58 +56,66 @@ async function getMovies(
       url += `&with_genres=${genre}`;
     }
 
-    // language & region
+    // language
     if (lang) {
-      const regionObj = LanguageRegionMappedData.find(
-        (l) => l.language === lang,
-      );
-      const region = regionObj?.region || "IN";
-      url += `&with_original_language=${lang}&region=${region}`;
+      url += `&with_original_language=${lang}`;
     }
 
-    // top rated
+    // sorting & release constraints
     if (topRated) {
-      // global top rated filter
-      // the vote counts must 500 above is considered...
-      const minVotes = lang ? 50 : 500;
+      const minVotes = lang ? 5 : 150;
       url += `&sort_by=vote_average.desc&vote_count.gte=${minVotes}`;
+    } else if (lang) {
+      // Language filter: sort by popularity without restrictive regional release date locks
+      url += `&sort_by=popularity.desc`;
     } else {
-      // regional
-      url += `&release_date.lte=${today}&with_release_type=3|4&sort_by=release_date.desc`;
+      // Default home page discovery
+      url += `&release_date.lte=${today}&with_release_type=3%7C4&sort_by=release_date.desc`;
     }
   }
 
   // console.log("URL:", url);
 
   try {
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    const res = await fetchWithRetry(url, { next: { revalidate: 3600 } });
     if (!res.ok) return { results: [], total_pages: 0 };
     return res.json();
   } catch (error) {
-    console.error("Fetch Error:", error);
+    console.error("Fetch Error after retries:", error);
     return { results: [], total_pages: 0 };
   }
 }
 
 async function getLanguages() {
-  const res = await fetch(
-    `${BASE_URL}/configuration/languages?api_key=${API_KEY}`,
-    {
-      next: { revalidate: 86400 },
-    },
-  );
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.sort((a, b) => a.english_name.localeCompare(b.english_name));
+  try {
+    const res = await fetchWithRetry(
+      `${BASE_URL}/configuration/languages?api_key=${API_KEY}`,
+      {
+        next: { revalidate: 86400 },
+      },
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.sort((a, b) => a.english_name.localeCompare(b.english_name));
+  } catch {
+    return [];
+  }
 }
 
 async function getGenres() {
-  const res = await fetch(`${BASE_URL}/genre/movie/list?api_key=${API_KEY}`, {
-    next: { revalidate: 86400 },
-  });
-  if (!res.ok) return [];
-  const data = await res.json();
-  return data.genres || [];
+  try {
+    const res = await fetchWithRetry(
+      `${BASE_URL}/genre/movie/list?api_key=${API_KEY}`,
+      {
+        next: { revalidate: 86400 },
+      },
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.genres || [];
+  } catch {
+    return [];
+  }
 }
 
 export default async function Home({ searchParams }) {
@@ -117,7 +143,7 @@ export default async function Home({ searchParams }) {
   // console.log(movieArr);
 
   return (
-    <div className="h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
+    <div className="lg:h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
       {/* Sidebar - Pass query, lang, and genres to manage UI states */}
       <AsideFilter
         // languagesArr={languagesArr}

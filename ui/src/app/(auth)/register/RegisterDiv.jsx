@@ -96,18 +96,15 @@ export default function RegisterDiv() {
     setServerError("");
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/register`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-          }),
-        },
-      );
+      const response = await fetch(`/api/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
 
       const data = await response.json();
 
@@ -167,7 +164,8 @@ export default function RegisterDiv() {
           <input
             id="name"
             type="text"
-            placeholder="John"
+            placeholder="Dhinakaran"
+            autoFocus
             className={`w-full px-4 py-3 rounded-xl border bg-black/20 text-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-white/10 ${
               errors.name ? "border-red-500/60" : "border-white/10"
             }`}
@@ -186,7 +184,7 @@ export default function RegisterDiv() {
           <input
             id="email"
             type="email"
-            placeholder="john@example.com"
+            placeholder="dhinakaran@example.com"
             className={`w-full px-4 py-3 rounded-xl border bg-black/20 text-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-white/10 ${
               errors.email ? "border-red-500/60" : "border-white/10"
             }`}

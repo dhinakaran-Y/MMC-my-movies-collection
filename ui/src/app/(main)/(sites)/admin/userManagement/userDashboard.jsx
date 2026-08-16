@@ -16,14 +16,14 @@ export function UserDashboard() {
     try {
       setIsDataLoading(true);
       const [userRes, colRes, watchRes] = await Promise.all([
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`, { credentials: "include" }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/all-collections`, { credentials: "include" }),
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/all-watchList`, { credentials: "include" }),
+        fetch(`/api/users`, { credentials: "include" }),
+        fetch(`/api/all-collections`, { credentials: "include" }),
+        fetch(`/api/all-watchList`, { credentials: "include" }),
       ]);
 
       if (!userRes.ok) throw new Error("Auth failed");
 
-      const userData = await userRes.json();     
+      const userData = await userRes.json();
       const colData = await colRes.json();
       const watchData = await watchRes.json();
 
@@ -57,7 +57,9 @@ export function UserDashboard() {
   }, [collections, watchLists]);
 
   if (loading || isDataLoading)
-    return <div className="p-10 text-white text-center">Loading Dashboard...</div>;
+    return (
+      <div className="p-10 text-white text-center">Loading Dashboard...</div>
+    );
 
   if (!user || user.role !== "admin")
     return <div className="p-10 text-white text-center">Access Denied</div>;
@@ -66,7 +68,11 @@ export function UserDashboard() {
     <div className="w-full max-w-7xl mx-auto bg-dark-body2 rounded-2xl border border-white/5 overflow-hidden shadow-2xl mt-10">
       <div className="p-6 border-b border-white/5 flex justify-between items-center">
         <h2 className="font-bold text-white text-lg">User Management</h2>
-        <button onClick={fetchAllData} className="text-xs text-brand hover:underline">Refresh Data</button>
+        <button
+          onClick={fetchAllData}
+          className="text-xs text-brand hover:underline">
+          Refresh Data
+        </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left">

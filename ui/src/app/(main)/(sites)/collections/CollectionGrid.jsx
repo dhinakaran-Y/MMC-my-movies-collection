@@ -28,7 +28,7 @@ export default function CollectionGrid() {
     if (!user?._id) return;
     try {
       setLoading(true);
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/get-collections/${user._id}`, {
+      const res = await fetch(`/api/get-collections/${user._id}`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -46,7 +46,7 @@ export default function CollectionGrid() {
   const fetchWatchList = async () => {
     if (!user?._id) return;
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/watch-list/${user._id}`, {
+      const res = await fetch(`/api/watch-list/${user._id}`, {
         credentials: "include",
       });
       const data = await res.json();
@@ -68,8 +68,8 @@ export default function CollectionGrid() {
   // 3. Create / Update Handler
   const handleCollectionSubmit = async (data) => {
     const endpoint = editingData
-      ? `${process.env.NEXT_PUBLIC_API_URL}/collection/${editingData._id}`
-      : `${process.env.NEXT_PUBLIC_API_URL}/collection`;
+      ? `/api/collection/${editingData._id}`
+      : `/api/collection`;
     const method = editingData ? "PATCH" : "POST";
 
     const res = await fetch(endpoint, {
@@ -93,7 +93,7 @@ export default function CollectionGrid() {
   // 4. Delete Handler
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this collection?")) return;
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/collection/${id}`, {
+    await fetch(`/api/collection/${id}`, {
       method: "DELETE",
       credentials: "include",
     });
@@ -107,7 +107,7 @@ export default function CollectionGrid() {
 
   return (
     <>
-      <main className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <main className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4  gap-6">
         {/* Create New Collection Button */}
         <div
           onClick={() => {
@@ -139,6 +139,7 @@ export default function CollectionGrid() {
             <h1 className="text-slate-400 group-hover:text-white capitalize font-semibold text-center text-xl">
               Watched
             </h1>
+            <div className="absolute inset-0 bg-brand/10 opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl" />
             <div className="mt-4 px-3 py-1 rounded-full bg-black/20 text-[10px] font-bold text-slate-500 uppercase tracking-widest border border-white/5 group-hover:border-brand/30 group-hover:text-brand/80 transition-all">
               {loading ? "..." : `${watchedMoviesCount} movies`}
             </div>

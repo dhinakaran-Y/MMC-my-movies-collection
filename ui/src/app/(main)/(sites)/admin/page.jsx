@@ -21,11 +21,11 @@ export default function AdminDashboard() {
         setDataLoading(true);
         // Assuming your backend has these endpoints
         const [usersRes, watchedRes, colRes] = await Promise.all([
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users-count`, { credentials: "include" }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/watched-movies-count`, {
+          fetch(`/api/admin/users-count`, { credentials: "include" }),
+          fetch(`/api/admin/watched-movies-count`, {
             credentials: "include",
           }),
-          fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/collections-count`, { credentials: "include" }),
+          fetch(`/api/admin/collections-count`, { credentials: "include" }),
         ]);
 
         const usersData = await usersRes.json();

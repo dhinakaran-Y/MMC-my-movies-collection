@@ -21,7 +21,7 @@ export default function UserTableRow({
 
   const handleUpdate = async (e) => {
     e.preventDefault();
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${user._id}`, {
+    await fetch(`/api/admin/users/${user._id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -33,7 +33,7 @@ export default function UserTableRow({
 
   const handleDelete = async () => {
     if (!confirm(`Are you sure you want to delete ${user.name}?`)) return;
-    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/admin/users/${user._id}`, {
+    await fetch(`/api/admin/users/${user._id}`, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -53,6 +53,7 @@ export default function UserTableRow({
                 setFormData({ ...formData, name: e.target.value })
               }
               placeholder="Name"
+              autoFocus
             />
             <input
               className="bg-white/5 p-2 rounded text-xs text-white"

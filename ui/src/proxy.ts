@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
-console.log("🔴🔴🔴 MIDDLEWARE FILE LOADED 🔴🔴🔴");
+// console.log("🔴🔴🔴 MIDDLEWARE FILE LOADED 🔴🔴🔴");
 
 async function verifyToken(token) {
   try {
@@ -24,11 +24,12 @@ async function verifyToken(token) {
       return null;
     }
 
-    console.log("✅ Middleware: Token verified successfully. Payload:", {
-      id: verified.payload.id,
-      email: verified.payload.email,
-      role: verified.payload.role,
-    });
+    // console.log("✅ Middleware: Token verified successfully. Payload:",
+    //    {
+    //   id: verified.payload.id,
+    //   email: verified.payload.email,
+    //   role: verified.payload.role,
+    // });
 
     return verified.payload;
   } catch (err) {
@@ -39,10 +40,9 @@ async function verifyToken(token) {
 
 async function getCollectionVisibility(collectionId) {
   try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL}/collection/${collectionId}`,
-      { cache: "no-store" },
-    );
+    const res = await fetch(`/api/collection/${collectionId}`, {
+      cache: "no-store",
+    });
     if (!res.ok) return null;
     const data = await res.json();
     return {
@@ -55,7 +55,7 @@ async function getCollectionVisibility(collectionId) {
   }
 }
 
-export async function middleware(request) {
+export async function proxy(request) {
   console.log("🔴🔴🔴 MIDDLEWARE FUNCTION CALLED 🔴🔴🔴");
   const token = request.cookies.get("token")?.value;
   const pathname = request.nextUrl.pathname;
@@ -79,7 +79,7 @@ export async function middleware(request) {
       );
       return NextResponse.redirect(new URL("/login", request.url));
     }
-    console.log("✅ Middleware: /collections - access granted");
+    // console.log("✅ Middleware: /collections - access granted");
     return NextResponse.next();
   }
 
@@ -93,7 +93,7 @@ export async function middleware(request) {
     // If fetch failed, let the page handle it
     if (!collection) return NextResponse.next();
 
-    // ✅ Public — anyone can view
+    // Public — anyone can view
     if (collection.visibility === "public") {
       return NextResponse.next();
     }
@@ -153,7 +153,7 @@ export async function middleware(request) {
       );
       return NextResponse.redirect(new URL("/not-authorized", request.url));
     }
-    console.log("✅ Middleware: /admin - access granted for admin");
+    // console.log("✅ Middleware: /admin - access granted for admin");
     return NextResponse.next();
   }
 
@@ -170,7 +170,7 @@ export async function middleware(request) {
       );
       return NextResponse.redirect(new URL("/login", request.url));
     }
-    console.log("✅ Middleware: /profile - access granted");
+    // console.log("✅ Middleware: /profile - access granted");
     return NextResponse.next();
   }
 

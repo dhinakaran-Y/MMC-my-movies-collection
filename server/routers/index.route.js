@@ -14,7 +14,7 @@ const router = express.Router();
 // console.log("running index route");
 
 router.get("/", async (req, res) => {
-  res.send("server running...");
+  res.send("server running..");
 });
 
 router.use(authRouter);

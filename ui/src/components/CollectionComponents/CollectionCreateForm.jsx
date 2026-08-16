@@ -55,6 +55,8 @@ export default function CollectionCreateForm({
               placeholder="ex: Crime & Investigation"
               defaultValue={initialData?.collectionName || ""}
               required
+              autoCapitalize="words"
+              autoFocus
               className="w-full px-4 py-3 bg-dark-body1 border border-white/10 text-white rounded-xl focus:ring-2 focus:ring-brand outline-none"
             />
           </div>

@@ -38,11 +38,14 @@ async function verifyToken(token) {
   }
 }
 
-async function getCollectionVisibility(collectionId) {
+async function getCollectionVisibility(collectionId, reqUrl) {
   try {
-    const res = await fetch(`/api/collection/${collectionId}`, {
-      cache: "no-store",
-    });
+    const res = await fetch(
+      new URL(`/api/collection/${collectionId}`, reqUrl).toString(),
+      {
+        cache: "no-store",
+      },
+    );
     if (!res.ok) return null;
     const data = await res.json();
     return {
@@ -56,6 +59,10 @@ async function getCollectionVisibility(collectionId) {
 }
 
 export async function proxy(request) {
+  return middleware(request);
+}
+
+export async function middleware(request) {
   console.log("🔴🔴🔴 MIDDLEWARE FUNCTION CALLED 🔴🔴🔴");
   const token = request.cookies.get("token")?.value;
   const pathname = request.nextUrl.pathname;
@@ -88,7 +95,7 @@ export async function proxy(request) {
     const collectionId = pathname.split("/collections/")[1]?.split("/")[0];
     if (!collectionId) return NextResponse.next();
 
-    const collection = await getCollectionVisibility(collectionId);
+    const collection = await getCollectionVisibility(collectionId, request.url);
 
     // If fetch failed, let the page handle it
     if (!collection) return NextResponse.next();

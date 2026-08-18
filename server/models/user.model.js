@@ -8,6 +8,8 @@ const userSchema = new mongoose.Schema(
     password: { type: String, required: true },
     role: { type: String, enum: ["user", "admin"], default: "user" },
     language: { type: String, default: "" },
+    region: { type: String, default: "IN" },
+    watchOption: { type: String, enum: ["flatrate", "buy", "rent", "free", "ads"], default: "flatrate" },
     profileImage: { type: String, default: "" },
   },
   { timestamps: true },

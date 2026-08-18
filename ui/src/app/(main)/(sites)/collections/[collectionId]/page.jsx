@@ -42,14 +42,46 @@ export async function generateMetadata({ params }) {
   }
 }
 
-async function getMovieDetails(movieId) {
+async function getMediaDetails(storedId) {
   try {
+    let type = "movie";
+    let id = storedId;
+    if (typeof storedId === "string" && storedId.includes(":")) {
+      [type, id] = storedId.split(":");
+    }
+
+    // Handle Custom Movie
+    if (type === "custom") {
+      const res = await fetch(getApiUrl(`/custom-movie/${id}`), {
+        cache: "no-store",
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const custom = data.data;
+      if (!custom) return null;
+      return {
+        id: custom._id,
+        storedId: `custom:${custom._id}`,
+        title: custom.title,
+        poster_path: custom.poster_path,
+        overview: custom.overview,
+        mediaType: custom.mediaType || "movie",
+        isCustom: true,
+      };
+    }
+
+    // Handle TMDB Movie/TV
     const res = await fetch(
-      `https://api.themoviedb.org/3/movie/${movieId}?api_key=${process.env.TMDB_API_KEY}`,
+      `https://api.themoviedb.org/3/${type}/${id}?api_key=${process.env.TMDB_API_KEY}`,
       { next: { revalidate: 86400 } },
     );
     if (!res.ok) return null;
-    return res.json();
+    const data = await res.json();
+    return {
+      ...data,
+      mediaType: type,
+      storedId: storedId,
+    };
   } catch {
     return null;
   }
@@ -125,7 +157,7 @@ export default async function SingleCollectionPage({ params }) {
 
   const moviesList =
     collection.moviesList?.length > 0
-      ? (await Promise.all(collection.moviesList.map(getMovieDetails))).filter(
+      ? (await Promise.all(collection.moviesList.map(getMediaDetails))).filter(
           Boolean,
         )
       : [];
@@ -141,7 +173,7 @@ export default async function SingleCollectionPage({ params }) {
         </h2>
         {moviesList.length > 0 && (
           <p className="text-slate-400 mt-2 font-medium">
-            Showing {moviesList.length} movies
+            Showing {moviesList.length} items
           </p>
         )}
 
@@ -154,37 +186,13 @@ export default async function SingleCollectionPage({ params }) {
           </div>
         )}
 
-        {/* if user visibility is private check the useAuth userId and collection owner Id  and show content only if they match else redirect to not-authorized */}
+        {/* if user visibility is private check the useAuth userId and collection owner Id and show content only if they match else redirect to not-authorized */}
       </div>
 
-      {moviesList.length === 0 ? (
-        <div className="flex flex-col items-center justify-center space-y-6 mt-20">
-          <Link href="/" title="Add movies">
-            <svg
-              className="text-7xl border rounded-full p-5 hover:text-brand active:text-shadow-brand"
-              xmlns="http://www.w3.org/2000/svg"
-              width="1em"
-              height="1em"
-              viewBox="0 0 14 14">
-              <path
-                fill="none"
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M7 .54v13M.5 7h13"
-              />
-            </svg>
-          </Link>
-          <p className="text-xl font-light text-slate-400">
-            No movies added in this collection yet.
-          </p>
-        </div>
-      ) : (
-        <SingleCollectionPageGrid
-          moviesList={moviesList}
-          collectionId={collectionId}
-        />
-      )}
+      <SingleCollectionPageGrid
+        moviesList={moviesList}
+        collectionId={collectionId}
+      />
     </section>
   );
 }

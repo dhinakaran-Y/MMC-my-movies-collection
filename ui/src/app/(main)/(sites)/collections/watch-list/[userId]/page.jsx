@@ -24,15 +24,47 @@ export async function generateMetadata() {
   };
 }
 
-// ── Fetch single movie details from TMDB ───────────────────────────────────
-async function getMovieDetails(movieId) {
+// ── Fetch single media (movie or tv) details from TMDB ─────────────────────
+async function getMediaDetails(storedId) {
   try {
+    let type = "movie";
+    let id = storedId;
+    if (typeof storedId === "string" && storedId.includes(":")) {
+      [type, id] = storedId.split(":");
+    }
+
+    // Handle Custom Movie
+    if (type === "custom") {
+      const res = await fetch(getApiUrl(`/custom-movie/${id}`), {
+        cache: "no-store",
+      });
+      if (!res.ok) return null;
+      const data = await res.json();
+      const custom = data.data;
+      if (!custom) return null;
+      return {
+        id: custom._id,
+        storedId: `custom:${custom._id}`,
+        title: custom.title,
+        poster_path: custom.poster_path,
+        overview: custom.overview,
+        mediaType: custom.mediaType || "movie",
+        isCustom: true,
+      };
+    }
+
+    // Handle TMDB Movie/TV
     const res = await fetch(
-      `https://api.themoviedb.org/3/movie/${movieId}?api_key=${process.env.TMDB_API_KEY}`,
+      `https://api.themoviedb.org/3/${type}/${id}?api_key=${process.env.TMDB_API_KEY}`,
       { next: { revalidate: 86400 } },
     );
     if (!res.ok) return null;
-    return await res.json();
+    const data = await res.json();
+    return {
+      ...data,
+      mediaType: type,
+      storedId: storedId,
+    };
   } catch {
     return null;
   }
@@ -81,7 +113,7 @@ export default async function WatchListPage({ params }) {
   const moviesIds = data.movies || [];
 
   const movieResults = await Promise.allSettled(
-    moviesIds.map((id) => getMovieDetails(id)),
+    moviesIds.map((id) => getMediaDetails(id)),
   );
 
   const validMovies = movieResults
@@ -100,11 +132,11 @@ export default async function WatchListPage({ params }) {
       {/* header */}
       <div className="mb-12 text-center">
         <h2 className="text-4xl font-bold text-white tracking-tight">
-          <span className="text-brand">My Watched Movies</span>
+          <span className="text-brand">My Watched List</span>
         </h2>
         <p className="text-slate-400 mt-2 font-medium">
           {validMovies.length > 0
-            ? `You have watched ${validMovies.length} movies`
+            ? `You have watched ${validMovies.length} items`
             : "Your watchList is empty."}
         </p>
       </div>

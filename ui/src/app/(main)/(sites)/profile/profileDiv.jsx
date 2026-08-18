@@ -58,11 +58,14 @@ export default function ProfileDiv() {
       console.log(res);
 
       if (res.ok) {
-        alert("Profile updated! Please refresh the page.");
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("mmc_home_filters");
+        }
         setUser((prev) => ({
           ...prev,
           ...data,
         }));
+        alert("Profile updated successfully!");
       } else {
         throw new Error(res.status, res.json);
       }

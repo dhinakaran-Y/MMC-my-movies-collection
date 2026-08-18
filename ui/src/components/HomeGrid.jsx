@@ -10,7 +10,7 @@ import Pagination from "./Pagination";
 const API_KEY = "3472ccb0d97ebc192cbd0e56bd799736";
 const BASE_URL = "https://api.themoviedb.org/3";
 
-export default function HomeGrid({ movieArr, currentPage, displayTotalPages }) {
+export default function HomeGrid({ movieArr, currentPage, displayTotalPages, mediaType = "movie" }) {
   const { user } = useAuth();
   const { openModal } = useCollectionModal();
   const searchParams = useSearchParams();
@@ -47,23 +47,46 @@ export default function HomeGrid({ movieArr, currentPage, displayTotalPages }) {
     const query = searchParams.get("query") || "";
     const genre = searchParams.get("genre") || "";
 
+    const today = new Date().toISOString().split("T")[0];
+    const isTV = mediaType === "tv";
+    // Release types (movies only): 1=Premiere, 2=Theatrical (limited), 3=Theatrical, 4=Digital, 5=Physical, 6=TV
+    const officialReleaseTypes = "1|2|3|4|5|6";
+    // Date field differs: movies use release_date, TV uses first_air_date
+    const dateField = isTV ? "first_air_date" : "release_date";
+    const searchEndpoint = isTV ? "tv" : "movie";
+    const discoverEndpoint = isTV ? "tv" : "movie";
+
     let url = "";
+    let isSearch = false;
+
     if (query) {
-      url = `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
+      url = `${BASE_URL}/search/${searchEndpoint}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
+      isSearch = true;
     } else if (topRated && !lang && !genre) {
-      url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&page=${page}`;
+      url = `${BASE_URL}/discover/${discoverEndpoint}?api_key=${API_KEY}&page=${page}`;
+      url += `&sort_by=vote_average.desc&vote_count.gte=${isTV ? 100 : 150}`;
+      url += `&${dateField}.lte=${today}`;
+      if (!isTV) {
+        url += `&with_release_type=${encodeURIComponent(officialReleaseTypes)}`;
+      }
     } else {
-      url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&page=${page}`;
+      url = `${BASE_URL}/discover/${discoverEndpoint}?api_key=${API_KEY}&page=${page}`;
       if (genre) url += `&with_genres=${genre}`;
       if (lang) url += `&with_original_language=${lang}`;
+
+      // Restrict to already-aired/released content
+      url += `&${dateField}.lte=${today}`;
+      if (!isTV) {
+        url += `&with_release_type=${encodeURIComponent(officialReleaseTypes)}`;
+      }
+
       if (topRated) {
-        const minVotes = lang ? 5 : 150;
+        const minVotes = lang ? 5 : (isTV ? 100 : 150);
         url += `&sort_by=vote_average.desc&vote_count.gte=${minVotes}`;
       } else if (lang) {
         url += `&sort_by=popularity.desc`;
       } else {
-        const today = new Date().toISOString().split("T")[0];
-        url += `&release_date.lte=${today}&with_release_type=3%7C4&sort_by=release_date.desc`;
+        url += `&sort_by=${dateField}.desc`;
       }
     }
 
@@ -71,8 +94,21 @@ export default function HomeGrid({ movieArr, currentPage, displayTotalPages }) {
       .then((res) => res.json())
       .then((data) => {
         if (!isMounted) return;
-        if (data.results && data.results.length > 0) {
-          setMovies(data.results);
+
+        let results = data.results || [];
+
+        // For search results, filter out placeholder/unauthorized entries
+        if (isSearch) {
+          results = results.filter((item) => {
+            const hasBasicInfo = item.poster_path && item.overview;
+            const itemDate = isTV ? item.first_air_date : item.release_date;
+            const isReleased = !itemDate || itemDate <= today;
+            return hasBasicInfo && isReleased;
+          });
+        }
+
+        if (results.length > 0) {
+          setMovies(results);
           setTotalPages(Math.min(data.total_pages || 1, 500));
         }
       })
@@ -84,26 +120,28 @@ export default function HomeGrid({ movieArr, currentPage, displayTotalPages }) {
     return () => {
       isMounted = false;
     };
-  }, [movieArr, searchParams, user?.language]);
+  }, [movieArr, searchParams, user?.language, mediaType]);
+
+  const typeLabel = mediaType === "tv" ? "TV shows" : "movies";
 
   return (
     <main className="col-span-full lg:col-span-9 lg:h-full lg:overflow-y-auto p-8 custom-scrollbar">
       {movies.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
           {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} />
+            <MovieCard key={movie.id} movie={movie} mediaType={mediaType} />
           ))}
         </div>
       ) : loadingFallback ? (
         <div className="h-[60vh] flex flex-col items-center justify-center text-white/40">
           <p className="text-xl font-semibold tracking-tight animate-pulse">
-            Loading movies...
+            Loading {typeLabel}...
           </p>
         </div>
       ) : (
         <div className="h-[60vh] flex flex-col items-center justify-center text-white/40">
           <p className="text-xl font-semibold tracking-tight">
-            No movies found matching your current filters.
+            No {typeLabel} found matching your current filters.
           </p>
         </div>
       )}

@@ -87,12 +87,18 @@ export async function deleteUser(req, res) {
 export async function updateMyAccount(req, res) {
   const { id } = req.user; // Get user ID from middleware
   
-  const { name, email, password, language, profileImage } = req.body;
+  const { name, email, password, language, profileImage, region, watchOption } = req.body;
 
   try {
     const updateData = { name, email };
     if (language !== undefined) {
       updateData.language = language;
+    }
+    if (region !== undefined) {
+      updateData.region = region;
+    }
+    if (watchOption !== undefined) {
+      updateData.watchOption = watchOption;
     }
     if (profileImage !== undefined) {
       updateData.profileImage = profileImage;

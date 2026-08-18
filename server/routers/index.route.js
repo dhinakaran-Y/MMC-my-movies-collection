@@ -8,6 +8,7 @@ import { json } from "node:stream/consumers";
 import adminRoutes from "#routers/admin/users.routes";
 import collectionRoutes from "#routers/collections/collections.routes";
 import moviesRoutes from "#routers/movies/movies.routes";
+import customMovieRoutes from "#routers/customMovie/customMovie.routes";
 
 const router = express.Router();
 
@@ -27,6 +28,9 @@ router.use(collectionRoutes);
 
 // movies routes
 router.use(moviesRoutes);
+
+// custom movies routes
+router.use(customMovieRoutes);
 
 // router.get("/ss", async (req, res) => {
 //   try {

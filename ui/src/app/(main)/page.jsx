@@ -21,35 +21,53 @@ async function fetchWithRetry(url, options = {}, retries = 5, delayMs = 500) {
   }
 }
 
-/* getMovies Fn
+/* getMedia Fn — supports both "movie" and "tv" media types
  * 1. search query
  * 2. genre filtering
  * 3. language
  * 4. top rated
+ * 5. media type (movie | tv)
  */
-async function getMovies(
+async function getMedia(
   page = 1,
   topRated = false,
   lang = "",
   query = "",
   genre = "",
+  type = "movie",
 ) {
   const today = new Date().toISOString().split("T")[0];
+  const isTV = type === "tv";
+  // Release types (movies only): 1=Premiere, 2=Theatrical (limited), 3=Theatrical, 4=Digital, 5=Physical, 6=TV
+  const officialReleaseTypes = "1|2|3|4|5|6";
+  // Date field differs: movies use release_date, TV uses first_air_date
+  const dateField = isTV ? "first_air_date" : "release_date";
   let url = "";
+  let isSearch = false;
 
-  // 1.Search
+  // 1. Search
   if (query) {
-    url = `${BASE_URL}/search/movie?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
+    const searchType = isTV ? "tv" : "movie";
+    url = `${BASE_URL}/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
+    isSearch = true;
   }
 
   // 2. Top Rated (Global - no other filters applied)
   else if (topRated && !lang && !genre) {
-    url = `${BASE_URL}/movie/top_rated?api_key=${API_KEY}&page=${page}`;
+    const discoverType = isTV ? "tv" : "movie";
+    url = `${BASE_URL}/discover/${discoverType}?api_key=${API_KEY}&page=${page}`;
+    url += `&sort_by=vote_average.desc&vote_count.gte=${isTV ? 100 : 150}`;
+    url += `&${dateField}.lte=${today}`;
+    // with_release_type only works for movies
+    if (!isTV) {
+      url += `&with_release_type=${encodeURIComponent(officialReleaseTypes)}`;
+    }
   }
 
   // 3. Discover - Filter
   else {
-    url = `${BASE_URL}/discover/movie?api_key=${API_KEY}&page=${page}`;
+    const discoverType = isTV ? "tv" : "movie";
+    url = `${BASE_URL}/discover/${discoverType}?api_key=${API_KEY}&page=${page}`;
 
     // genre
     if (genre) {
@@ -61,16 +79,22 @@ async function getMovies(
       url += `&with_original_language=${lang}`;
     }
 
-    // sorting & release constraints
+    // Restrict to already-aired/released content
+    url += `&${dateField}.lte=${today}`;
+    // with_release_type only works for movies
+    if (!isTV) {
+      url += `&with_release_type=${encodeURIComponent(officialReleaseTypes)}`;
+    }
+
+    // sorting
     if (topRated) {
-      const minVotes = lang ? 5 : 150;
+      const minVotes = lang ? 5 : (isTV ? 100 : 150);
       url += `&sort_by=vote_average.desc&vote_count.gte=${minVotes}`;
     } else if (lang) {
-      // Language filter: sort by popularity without restrictive regional release date locks
       url += `&sort_by=popularity.desc`;
     } else {
-      // Default home page discovery
-      url += `&release_date.lte=${today}&with_release_type=3%7C4&sort_by=release_date.desc`;
+      // Default discovery — sort by most recent
+      url += `&sort_by=${dateField}.desc`;
     }
   }
 
@@ -79,7 +103,19 @@ async function getMovies(
   try {
     const res = await fetchWithRetry(url, { next: { revalidate: 3600 } });
     if (!res.ok) return { results: [], total_pages: 0 };
-    return res.json();
+    const data = await res.json();
+
+    // For search results, filter out placeholder/unauthorized entries
+    if (isSearch && data.results) {
+      data.results = data.results.filter((item) => {
+        const hasBasicInfo = item.poster_path && item.overview;
+        const itemDate = isTV ? item.first_air_date : item.release_date;
+        const isReleased = !itemDate || itemDate <= today;
+        return hasBasicInfo && isReleased;
+      });
+    }
+
+    return data;
   } catch (error) {
     console.error("Fetch Error after retries:", error);
     return { results: [], total_pages: 0 };
@@ -102,10 +138,11 @@ async function getLanguages() {
   }
 }
 
-async function getGenres() {
+async function getGenres(type = "movie") {
   try {
+    const genreType = type === "tv" ? "tv" : "movie";
     const res = await fetchWithRetry(
-      `${BASE_URL}/genre/movie/list?api_key=${API_KEY}`,
+      `${BASE_URL}/genre/${genreType}/list?api_key=${API_KEY}`,
       {
         next: { revalidate: 86400 },
       },
@@ -127,73 +164,37 @@ export default async function Home({ searchParams }) {
   const language = params.lang === "all" ? "" : (params.lang || "");
   const query = params.query || "";
   const genre = params.genre || "";
+  const mediaType = params.type === "tv" ? "tv" : "movie";
 
-  // Fetch all secondary data and main movie data in parallel
-  const [movieData, languagesArr, genresArr] = await Promise.all([
-    getMovies(currentPage, isTopRated, language, query, genre),
+  // Fetch all secondary data and main media data in parallel
+  const [mediaData, languagesArr, genresArr] = await Promise.all([
+    getMedia(currentPage, isTopRated, language, query, genre, mediaType),
     getLanguages(),
-    getGenres(),
+    getGenres(mediaType),
   ]);
 
-  const movieArr = movieData.results || [];
+  const movieArr = mediaData.results || [];
   const apiLimit = 500;
-  const actualTotalPages = movieData.total_pages || 1;
+  const actualTotalPages = mediaData.total_pages || 1;
   const displayTotalPages = Math.min(actualTotalPages, apiLimit);
-
-  // console.log(movieArr);
 
   return (
     <div className="lg:h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
-      {/* Sidebar - Pass query, lang, and genres to manage UI states */}
+      {/* Sidebar - Pass query, lang, genres, and media type to manage UI states */}
       <AsideFilter
-        // languagesArr={languagesArr}
         genresArr={genresArr}
         currentLang={language}
         currentGenre={genre}
         currentQuery={query}
+        currentType={mediaType}
       />
-
-      {/* <main className="col-span-9 h-full overflow-y-auto p-8 custom-scrollbar">
-        {movieArr.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-            {movieArr.map((movie) => (
-              <MovieCard key={movie.id} movie={movie} />
-            ))}
-          </div>
-        ) : (
-          // no data found
-          <div className="h-[60vh] flex flex-col items-center justify-center text-white/40">
-            <p className="text-xl font-semibold tracking-tight">
-              No movies found matching your current filters.
-            </p>
-          </div>
-        )}
-
-        {movieArr.length > 0 && (
-          <div className="mt-12 mb-8">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={displayTotalPages}
-            />
-          </div>
-        )}
-      </main> */}
 
       <HomeGrid
         movieArr={movieArr}
         currentPage={currentPage}
         displayTotalPages={displayTotalPages}
+        mediaType={mediaType}
       />
-      
-      {/* <CollectionCreateForm
-              isOpen={isOpen}
-              onClose={() => {
-                setIsOpen(false);
-                setEditingData(null);
-              }}
-              onSubmit={handleCollectionSubmit}
-              initialData={editingData}
-            /> */}
     </div>
   );
 }

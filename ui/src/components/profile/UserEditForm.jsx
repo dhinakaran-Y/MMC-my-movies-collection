@@ -16,6 +16,9 @@ export default function UserEditForm({
   const [selectedLanguage, setSelectedLanguage] = useState(
     initialData?.language || "",
   );
+  const [selectedRegion, setSelectedRegion] = useState(
+    initialData?.region || "IN",
+  );
   const [previewImage, setPreviewImage] = useState(
     initialData?.profileImage || "",
   );
@@ -23,6 +26,7 @@ export default function UserEditForm({
   useEffect(() => {
     if (isOpen) {
       setSelectedLanguage(initialData?.language || "");
+      setSelectedRegion(initialData?.region || "IN");
       setPreviewImage(initialData?.profileImage || "");
     }
   }, [isOpen, initialData]);
@@ -83,6 +87,33 @@ export default function UserEditForm({
   const currentOption =
     languageOptions.find((opt) => opt.value === selectedLanguage) ||
     languageOptions[0];
+
+  const regionOptions = [
+    { value: "IN", label: "India" },
+    { value: "US", label: "United States" },
+    { value: "GB", label: "United Kingdom" },
+    { value: "CA", label: "Canada" },
+    { value: "AU", label: "Australia" },
+    { value: "DE", label: "Germany" },
+    { value: "FR", label: "France" },
+    { value: "JP", label: "Japan" },
+    { value: "KR", label: "South Korea" },
+    { value: "BR", label: "Brazil" },
+    { value: "IT", label: "Italy" },
+    { value: "ES", label: "Spain" },
+    { value: "MX", label: "Mexico" },
+    { value: "SE", label: "Sweden" },
+    { value: "NL", label: "Netherlands" },
+    { value: "SG", label: "Singapore" },
+    { value: "AE", label: "UAE" },
+    { value: "ZA", label: "South Africa" },
+    { value: "PH", label: "Philippines" },
+    { value: "TH", label: "Thailand" },
+  ];
+
+  const currentRegionOption =
+    regionOptions.find((opt) => opt.value === selectedRegion) ||
+    regionOptions[0];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -174,6 +205,11 @@ export default function UserEditForm({
               value={currentOption}
               placeholder="Search preferred language..."
               isSearchable
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
               unstyled
               classNames={{
                 control: ({ isFocused }) =>
@@ -183,11 +219,13 @@ export default function UserEditForm({
                       : "border-white/10"
                   } cursor-pointer text-sm`,
                 menu: () =>
-                  "bg-slate-800 border border-white/10 rounded-xl mt-2 overflow-hidden shadow-2xl z-50 max-h-48 overflow-y-auto custom-scrollbar",
+                  "bg-slate-800 border border-white/15 rounded-xl shadow-2xl overflow-hidden mt-1",
+                menuList: () =>
+                  "max-h-52 overflow-y-auto custom-scrollbar p-1",
                 option: ({ isFocused, isSelected }) =>
-                  `px-3 py-2 cursor-pointer text-sm transition-colors ${
+                  `px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors ${
                     isSelected
-                      ? "bg-brand text-white"
+                      ? "bg-brand text-white font-medium"
                       : isFocused
                         ? "bg-white/10 text-white"
                         : "text-white/70"
@@ -198,6 +236,51 @@ export default function UserEditForm({
                 dropdownIndicator: () => "text-white/40 hover:text-white px-2",
               }}
               onChange={(opt) => setSelectedLanguage(opt ? opt.value : "")}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-white/40 uppercase tracking-wider">
+              Preferred Region
+            </label>
+            <input type="hidden" name="region" value={selectedRegion} />
+            <Select
+              id="profileRegionSelect"
+              options={regionOptions}
+              value={currentRegionOption}
+              placeholder="Select region..."
+              isSearchable
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              unstyled
+              classNames={{
+                control: ({ isFocused }) =>
+                  `bg-dark-body1 text-white p-2 rounded-xl border transition-all ${
+                    isFocused
+                      ? "border-brand ring-1 ring-brand"
+                      : "border-white/10"
+                  } cursor-pointer text-sm`,
+                menu: () =>
+                  "bg-slate-800 border border-white/15 rounded-xl shadow-2xl overflow-hidden mt-1",
+                menuList: () =>
+                  "max-h-52 overflow-y-auto custom-scrollbar p-1",
+                option: ({ isFocused, isSelected }) =>
+                  `px-3 py-2 rounded-lg cursor-pointer text-sm transition-colors ${
+                    isSelected
+                      ? "bg-brand text-white font-medium"
+                      : isFocused
+                        ? "bg-white/10 text-white"
+                        : "text-white/70"
+                  }`,
+                placeholder: () => "text-white/30 px-2 text-sm",
+                singleValue: () => "text-white px-2 text-sm",
+                input: () => "text-white px-2 text-sm",
+                dropdownIndicator: () => "text-white/40 hover:text-white px-2",
+              }}
+              onChange={(opt) => setSelectedRegion(opt ? opt.value : "IN")}
             />
           </div>
 

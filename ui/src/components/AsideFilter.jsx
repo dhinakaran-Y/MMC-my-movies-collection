@@ -6,6 +6,8 @@ import dynamic from "next/dynamic";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/components/context/AuthContext";
 import ApiProviderSelect from "@/components/ApiProviderSelect";
+import RangeSlider from "@/components/RangeSlider";
+import StreamingServicePills from "@/components/StreamingServicePills";
 import {
   getGenres as tvmazeGenres,
   getLanguages as tvmazeLanguages,
@@ -13,6 +15,12 @@ import {
   getShowTypes,
   getCountries as tvmazeCountries,
 } from "@/lib/providers/tvmazeAdapter";
+import {
+  getContentTypes as watchmodeContentTypes,
+  getServiceTypes as watchmodeServiceTypes,
+  getSortOptions as watchmodeSortOptions,
+  getRegions as watchmodeRegions,
+} from "@/lib/providers/watchmodeAdapter";
 
 const Select = dynamic(() => import("react-select"), { ssr: false });
 
@@ -31,6 +39,7 @@ export default function AsideFilter({
 
   const activeProvider = searchParams.get("provider") || "tmdb";
   const isTvmaze = activeProvider === "tvmaze";
+  const isWatchmode = activeProvider === "watchmode";
 
   // Search state for controlled input
   const [searchQuery, setSearchQuery] = useState(
@@ -92,9 +101,12 @@ export default function AsideFilter({
     ? (currentLang || "all")
     : (user?.language || "all");
 
-  const currentLanguageOptions = isTvmaze ? tvmazeLanguageOptions : languageOptions;
+  const currentLanguageOptions = isTvmaze
+    ? tvmazeLanguageOptions
+    : languageOptions;
   const defaultValue =
-    currentLanguageOptions.find((opt) => opt.value === activeLang) || currentLanguageOptions[0];
+    currentLanguageOptions.find((opt) => opt.value === activeLang) ||
+    currentLanguageOptions[0];
 
   // --- OTT Region ---
   const regionOptions = [
@@ -120,14 +132,26 @@ export default function AsideFilter({
     { value: "TH", label: "Thailand" },
   ];
 
-  const activeRegion = searchParams.has("region")
-    ? (searchParams.get("region") || "IN")
-    : (user?.region || "IN");
+  // ── Watchmode-specific filter values ──
+  const wmContentTypes = watchmodeContentTypes();
+  const wmServiceTypes = watchmodeServiceTypes();
+  const wmSortOptions = watchmodeSortOptions();
+  const wmRegionOptions = watchmodeRegions();
 
-  const defaultRegion =
-    regionOptions.find((opt) => opt.value === activeRegion) || regionOptions[0];
+  const SUPPORTED_WM_REGIONS = ["US", "IN", "CA"];
+  const rawRegion = searchParams.has("region")
+    ? (searchParams.get("region") || "")
+    : (user?.region || "");
 
-  // --- Watch Option (Monetization Type) ---
+  const activeRegion = isWatchmode
+    ? (rawRegion && SUPPORTED_WM_REGIONS.includes(rawRegion.toUpperCase()) ? rawRegion.toUpperCase() : "US")
+    : (rawRegion || "IN");
+
+  const defaultRegion = isWatchmode
+    ? (wmRegionOptions.find((opt) => opt.value === activeRegion) || wmRegionOptions[0])
+    : (regionOptions.find((opt) => opt.value === activeRegion) || regionOptions[0]);
+
+  // --- Watch Option (Monetization Type - TMDB) ---
   const watchOptionOptions = [
     { value: "flatrate", label: "Streaming", desc: "Subscription streaming (Netflix, Prime, etc.)" },
     { value: "buy", label: "Purchase", desc: "Digital purchase to own permanently" },
@@ -141,33 +165,38 @@ export default function AsideFilter({
     : (user?.watchOption || "flatrate");
 
   const defaultWatchOption =
-    watchOptionOptions.find((opt) => opt.value === activeWatchOption) || watchOptionOptions[0];
+    watchOptionOptions.find((opt) => opt.value === activeWatchOption) ||
+    watchOptionOptions[0];
 
-  // ── TVmaze-specific filter values from URL ──
+  // ── TVmaze-specific filter values ──
   const activeShowStatus = searchParams.get("showStatus") || "";
   const activeShowType = searchParams.get("showType") || "";
   const activeCountry = searchParams.get("country") || "";
-  const activeSortBy = searchParams.get("sortBy") || "popularity";
+  const activeTvmazeSortBy = searchParams.get("sortBy") || "popularity";
 
-  // TVmaze filter data
   const showStatusOptions = getShowStatuses();
   const showTypeOptions = getShowTypes();
   const countryOptions = tvmazeCountries().map((c) => ({
     value: c.code,
     label: c.name,
   }));
-  const sortByOptions = [
+  const tvmazeSortByOptions = [
     { value: "popularity", label: "🔥 Popularity" },
     { value: "rating", label: "⭐ Rating" },
     { value: "name", label: "🔤 Name A-Z" },
     { value: "newest", label: "🆕 Newest First" },
   ];
 
+  // ── Watchmode-specific filter values ──
+  const activeWmType = searchParams.get("wmType") || "";
+  const activeServiceTypes = searchParams.get("serviceTypes")?.split(",").filter(Boolean) || [];
+  const activeSourceIds = searchParams.get("sourceIds")?.split(",").filter(Boolean) || [];
+  const activeWmSortBy = searchParams.get("sortBy") || "popularity_desc";
+
   const updateRoute = (key, value) => {
     const params = new URLSearchParams(searchParams.toString());
 
     if (key === "provider") {
-      // When switching provider, clear all filters except provider itself
       const newParams = new URLSearchParams();
       if (value && value !== "tmdb") newParams.set("provider", value);
       router.push(`?${newParams.toString()}`, { scroll: false });
@@ -182,11 +211,19 @@ export default function AsideFilter({
       params.delete("lang");
       params.delete("topRated");
       params.delete("genre");
-      // Also clear TVmaze-specific filters on search
       params.delete("showStatus");
       params.delete("showType");
       params.delete("country");
       params.delete("sortBy");
+      params.delete("wmType");
+      params.delete("serviceTypes");
+      params.delete("sourceIds");
+      params.delete("yearStart");
+      params.delete("yearEnd");
+      params.delete("ratingLow");
+      params.delete("ratingHigh");
+      params.delete("criticLow");
+      params.delete("criticHigh");
       if (value) params.set("query", value);
       else params.delete("query");
     } else if (key === "genre") {
@@ -206,6 +243,27 @@ export default function AsideFilter({
         const newGenres = [...currentGenres, value];
         params.set("genre", newGenres.join(","));
       }
+    } else if (key === "serviceTypes") {
+      params.delete("query");
+      if (value) params.set("serviceTypes", value);
+      else params.delete("serviceTypes");
+    } else if (key === "sourceIds") {
+      params.delete("query");
+      const current = params.get("sourceIds")
+        ? params
+            .get("sourceIds")
+            .split(",")
+            .filter(Boolean)
+        : [];
+
+      if (current.includes(value)) {
+        const filtered = current.filter((id) => id !== value);
+        if (filtered.length > 0) params.set("sourceIds", filtered.join(","));
+        else params.delete("sourceIds");
+      } else {
+        const updated = [...current, value];
+        params.set("sourceIds", updated.join(","));
+      }
     } else {
       params.delete("query");
       if (value) params.set(key, value);
@@ -213,6 +271,26 @@ export default function AsideFilter({
     }
 
     params.delete("page");
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
+  const updateRange = (lowKey, lowVal, highKey, highVal, defaultLow, defaultHigh) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("query");
+    params.delete("page");
+
+    if (lowVal !== undefined && Number(lowVal) !== defaultLow) {
+      params.set(lowKey, String(lowVal));
+    } else {
+      params.delete(lowKey);
+    }
+
+    if (highVal !== undefined && Number(highVal) !== defaultHigh) {
+      params.set(highKey, String(highVal));
+    } else {
+      params.delete(highKey);
+    }
+
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
@@ -227,8 +305,8 @@ export default function AsideFilter({
     }, 400);
   };
 
-  const selectedGenres = searchParams.get("genre")?.split(",") || [];
-  const isTV = currentType === "tv" || isTvmaze; // TVmaze is always TV
+  const selectedGenres = searchParams.get("genre")?.split(",").filter(Boolean) || [];
+  const isTV = currentType === "tv" || isTvmaze;
 
   // ── Shared classNames for react-select ──
   const selectClassNames = {
@@ -254,8 +332,14 @@ export default function AsideFilter({
     dropdownIndicator: () => "text-white/40 hover:text-white px-2",
   };
 
-  // ── Pill button helper (reusable for Show Status, Show Type, Watch Option, etc.) ──
-  const PillGroup = ({ options, activeValue, paramKey, labelKey = "label", valueKey = "value" }) => (
+  // ── Pill button helper ──
+  const PillGroup = ({
+    options,
+    activeValue,
+    paramKey,
+    labelKey = "label",
+    valueKey = "value",
+  }) => (
     <div className="flex flex-wrap gap-2 pt-1">
       {options.map((opt) => {
         const optValue = typeof opt === "string" ? opt : opt[valueKey];
@@ -295,14 +379,15 @@ export default function AsideFilter({
         <button
           onClick={() => {
             const userRegion = user?.region || "IN";
-            const providerQs = activeProvider && activeProvider !== "tmdb" ? `&provider=${activeProvider}` : "";
             let resetQs;
-            if (isTvmaze) {
+            if (isWatchmode) {
+              resetQs = `?provider=watchmode&region=US`;
+            } else if (isTvmaze) {
               resetQs = `?provider=tvmaze`;
             } else {
               resetQs = isTV
-                ? `?type=tv&lang=all&region=${userRegion}&watchOption=flatrate${providerQs}`
-                : `?lang=all&region=${userRegion}&watchOption=flatrate${providerQs}`;
+                ? `?type=tv&lang=all&region=${userRegion}&watchOption=flatrate`
+                : `?lang=all&region=${userRegion}&watchOption=flatrate`;
             }
             setSearchQuery("");
             if (typeof window !== "undefined") {
@@ -316,7 +401,7 @@ export default function AsideFilter({
       </div>
 
       {/* 0. Media Type Toggle — Movie / TV (TMDB only) */}
-      {!isTvmaze && (
+      {!isTvmaze && !isWatchmode && (
         <div className="space-y-2 ml-2">
           <label className="text-xs font-bold text-white/50 uppercase">
             Media Type
@@ -356,6 +441,16 @@ export default function AsideFilter({
         </div>
       )}
 
+      {/* Watchmode: Streaming Availability Provider Indicator */}
+      {isWatchmode && (
+        <div className="ml-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+          <span className="text-lg">⚡</span>
+          <span className="text-xs font-semibold text-cyan-300 uppercase tracking-wider">
+            Watchmode Universal Catalog
+          </span>
+        </div>
+      )}
+
       {/* 1. Search Bar with Icon */}
       <div className="space-y-2 relative">
         <div className="relative flex items-center">
@@ -378,100 +473,248 @@ export default function AsideFilter({
             onChange={handleSearchChange}
             className="w-full pl-11 pr-4 py-2.5 rounded-full border border-white/20 bg-dark-body1 text-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-white/30 text-sm"
             placeholder={
-              isTvmaze
-                ? "Search TV shows & series..."
-                : isTV
-                  ? "Search TV show title..."
-                  : "Search movie title..."
+              isWatchmode
+                ? "Search titles on Watchmode..."
+                : isTvmaze
+                  ? "Search TV shows & series..."
+                  : isTV
+                    ? "Search TV show title..."
+                    : "Search movie title..."
             }
           />
         </div>
       </div>
 
+      {/* ═══════════ Watchmode-specific Filters ═══════════ */}
+      {isWatchmode && (
+        <>
+          {/* Watchmode: Content Type Dropdown */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              Content Type
+            </label>
+            <Select
+              id="wmContentTypeSelect"
+              options={wmContentTypes}
+              value={
+                wmContentTypes.find((opt) => opt.value === activeWmType) ||
+                wmContentTypes[0]
+              }
+              placeholder="Select content type..."
+              isSearchable={false}
+              menuPortalTarget={
+                typeof document !== "undefined" ? document.body : null
+              }
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              unstyled
+              classNames={selectClassNames}
+              onChange={(selectedOption) =>
+                updateRoute("wmType", selectedOption.value)
+              }
+            />
+          </div>
+
+          {/* Watchmode: Service Types Dropdown */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              Service Type
+            </label>
+            <Select
+              id="wmServiceTypeSelect"
+              options={[
+                { value: "", label: "All Service Types" },
+                ...wmServiceTypes,
+              ]}
+              value={
+                [
+                  { value: "", label: "All Service Types" },
+                  ...wmServiceTypes,
+                ].find((opt) => opt.value === (searchParams.get("serviceTypes") || "")) || {
+                  value: "",
+                  label: "All Service Types",
+                }
+              }
+              placeholder="Select service type..."
+              isSearchable={false}
+              menuPortalTarget={
+                typeof document !== "undefined" ? document.body : null
+              }
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              unstyled
+              classNames={selectClassNames}
+              onChange={(selectedOption) =>
+                updateRoute("serviceTypes", selectedOption.value)
+              }
+            />
+          </div>
+
+          {/* Watchmode: Streaming Services Chip Grid */}
+          <StreamingServicePills
+            activeRegion={activeRegion}
+            selectedSourceIds={activeSourceIds}
+            onToggleSourceId={(sourceId) => updateRoute("sourceIds", sourceId)}
+          />
+
+          {/* Watchmode: Sort By */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              Sort By
+            </label>
+            <Select
+              id="wmSortBySelect"
+              options={wmSortOptions}
+              value={
+                wmSortOptions.find((opt) => opt.value === activeWmSortBy) ||
+                wmSortOptions[1]
+              }
+              placeholder="Sort by..."
+              isSearchable={false}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              unstyled
+              classNames={selectClassNames}
+              onChange={(selectedOption) =>
+                updateRoute("sortBy", selectedOption.value)
+              }
+            />
+          </div>
+
+          {/* Watchmode: Release Year Slider */}
+          <RangeSlider
+            title="Release Year"
+            min={1900}
+            max={2026}
+            step={1}
+            lowValue={searchParams.get("yearStart") || 1900}
+            highValue={searchParams.get("yearEnd") || 2026}
+            onChange={(min, max) =>
+              updateRange("yearStart", min, "yearEnd", max, 1900, 2026)
+            }
+          />
+
+          {/* Watchmode: User Rating Slider (0-10) */}
+          <RangeSlider
+            title="User Rating"
+            min={0}
+            max={10}
+            step={0.1}
+            lowValue={searchParams.get("ratingLow") || 0}
+            highValue={searchParams.get("ratingHigh") || 10}
+            onChange={(min, max) =>
+              updateRange("ratingLow", min, "ratingHigh", max, 0, 10)
+            }
+          />
+
+          {/* Watchmode: Critic Score Slider (0-100%) */}
+          <RangeSlider
+            title="Critic Score"
+            min={0}
+            max={100}
+            step={1}
+            unit="%"
+            lowValue={searchParams.get("criticLow") || 0}
+            highValue={searchParams.get("criticHigh") || 100}
+            onChange={(min, max) =>
+              updateRange("criticLow", min, "criticHigh", max, 0, 100)
+            }
+          />
+        </>
+      )}
+
       {/* ═══════════ TVmaze-specific Filters ═══════════ */}
-
-      {/* TVmaze: Sort By */}
       {isTvmaze && (
-        <div className="flex flex-col space-y-2 ml-2">
-          <label className="text-xs font-bold text-white/50 uppercase">
-            Sort By
-          </label>
-          <Select
-            id="sortBySelect"
-            options={sortByOptions}
-            value={sortByOptions.find((opt) => opt.value === activeSortBy) || sortByOptions[0]}
-            placeholder="Sort by..."
-            isSearchable={false}
-            menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-            menuPosition="fixed"
-            styles={{
-              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-            }}
-            unstyled
-            classNames={selectClassNames}
-            onChange={(selectedOption) =>
-              updateRoute("sortBy", selectedOption.value)
-            }
-          />
-        </div>
-      )}
+        <>
+          {/* TVmaze: Sort By */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              Sort By
+            </label>
+            <Select
+              id="sortBySelect"
+              options={tvmazeSortByOptions}
+              value={
+                tvmazeSortByOptions.find((opt) => opt.value === activeTvmazeSortBy) ||
+                tvmazeSortByOptions[0]
+              }
+              placeholder="Sort by..."
+              isSearchable={false}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              unstyled
+              classNames={selectClassNames}
+              onChange={(selectedOption) =>
+                updateRoute("sortBy", selectedOption.value)
+              }
+            />
+          </div>
 
-      {/* TVmaze: Show Status */}
-      {isTvmaze && (
-        <div className="flex flex-col space-y-2 ml-2">
-          <label className="text-xs font-bold text-white/50 uppercase">
-            Show Status
-          </label>
-          <PillGroup
-            options={showStatusOptions}
-            activeValue={activeShowStatus}
-            paramKey="showStatus"
-          />
-        </div>
-      )}
+          {/* TVmaze: Show Status */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              Show Status
+            </label>
+            <PillGroup
+              options={showStatusOptions}
+              activeValue={activeShowStatus}
+              paramKey="showStatus"
+            />
+          </div>
 
-      {/* TVmaze: Show Type */}
-      {isTvmaze && (
-        <div className="flex flex-col space-y-2 ml-2">
-          <label className="text-xs font-bold text-white/50 uppercase">
-            Show Type
-          </label>
-          <PillGroup
-            options={showTypeOptions}
-            activeValue={activeShowType}
-            paramKey="showType"
-          />
-        </div>
-      )}
+          {/* TVmaze: Show Type */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              Show Type
+            </label>
+            <PillGroup
+              options={showTypeOptions}
+              activeValue={activeShowType}
+              paramKey="showType"
+            />
+          </div>
 
-      {/* TVmaze: Country */}
-      {isTvmaze && (
-        <div className="flex flex-col space-y-2 ml-2">
-          <label className="text-xs font-bold text-white/50 uppercase">
-            Country
-          </label>
-          <Select
-            id="countrySelect"
-            options={[{ value: "", label: "All Countries" }, ...countryOptions]}
-            value={
-              activeCountry
-                ? countryOptions.find((opt) => opt.value === activeCountry) || { value: "", label: "All Countries" }
-                : { value: "", label: "All Countries" }
-            }
-            placeholder="Filter by country..."
-            isSearchable
-            menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-            menuPosition="fixed"
-            styles={{
-              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-            }}
-            unstyled
-            classNames={selectClassNames}
-            onChange={(selectedOption) =>
-              updateRoute("country", selectedOption.value)
-            }
-          />
-        </div>
+          {/* TVmaze: Country */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              Country
+            </label>
+            <Select
+              id="countrySelect"
+              options={[{ value: "", label: "All Countries" }, ...countryOptions]}
+              value={
+                activeCountry
+                  ? countryOptions.find((opt) => opt.value === activeCountry) || {
+                      value: "",
+                      label: "All Countries",
+                    }
+                  : { value: "", label: "All Countries" }
+              }
+              placeholder="Filter by country..."
+              isSearchable
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              unstyled
+              classNames={selectClassNames}
+              onChange={(selectedOption) =>
+                updateRoute("country", selectedOption.value)
+              }
+            />
+          </div>
+        </>
       )}
 
       {/* ═══════════ Shared Filters ═══════════ */}
@@ -500,7 +743,7 @@ export default function AsideFilter({
         />
       </div>
 
-      {/* 3. OTT Region dropdown (TMDB only) */}
+      {/* 3. OTT Region dropdown (TMDB & Watchmode) */}
       {!isTvmaze && (
         <div className="flex flex-col space-y-2 ml-2">
           <label className="text-xs font-bold text-white/50 uppercase">
@@ -508,8 +751,12 @@ export default function AsideFilter({
           </label>
           <Select
             id="regionSelect"
-            options={regionOptions}
-            value={defaultRegion}
+            options={isWatchmode ? wmRegionOptions : regionOptions}
+            value={
+              (isWatchmode ? wmRegionOptions : regionOptions).find(
+                (opt) => opt.value === activeRegion,
+              ) || defaultRegion
+            }
             placeholder="Select OTT region"
             isSearchable
             menuPortalTarget={typeof document !== "undefined" ? document.body : null}
@@ -527,7 +774,7 @@ export default function AsideFilter({
       )}
 
       {/* 4. Watch Option - Monetization Type (TMDB only) */}
-      {!isTvmaze && (
+      {!isTvmaze && !isWatchmode && (
         <div className="flex flex-col space-y-2 ml-2">
           <label className="text-xs font-bold text-white/50 uppercase">
             Watch Option
@@ -605,7 +852,7 @@ export default function AsideFilter({
       </div>
 
       {/* 6. Top Rated (TMDB only) */}
-      {!isTvmaze && (
+      {!isTvmaze && !isWatchmode && (
         <div className="flex items-center justify-between px-2 py-4 border-t border-white/5">
           <label
             htmlFor="rating-checkbox"

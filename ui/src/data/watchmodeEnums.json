@@ -1,0 +1,3807 @@
+{
+  "contentTypes": [
+    {
+      "value": "",
+      "label": "All Content Types"
+    },
+    {
+      "value": "movie",
+      "label": "Movies"
+    },
+    {
+      "value": "tv_series",
+      "label": "TV Shows"
+    },
+    {
+      "value": "tv_miniseries",
+      "label": "Miniseries"
+    },
+    {
+      "value": "tv_special",
+      "label": "TV Specials"
+    },
+    {
+      "value": "short_film",
+      "label": "Short Films"
+    }
+  ],
+  "serviceTypes": [
+    {
+      "value": "sub",
+      "label": "Subscription"
+    },
+    {
+      "value": "free",
+      "label": "Free"
+    },
+    {
+      "value": "rent",
+      "label": "Rent"
+    },
+    {
+      "value": "buy",
+      "label": "Buy"
+    },
+    {
+      "value": "tve",
+      "label": "TV Everywhere"
+    }
+  ],
+  "sortOptions": [
+    {
+      "value": "popularity_desc",
+      "label": "Popularity (High to Low)"
+    },
+    {
+      "value": "popularity_asc",
+      "label": "Popularity (Low to High)"
+    },
+    {
+      "value": "release_date_desc",
+      "label": "Release Date (Newest)"
+    },
+    {
+      "value": "release_date_asc",
+      "label": "Release Date (Oldest)"
+    },
+    {
+      "value": "user_rating_desc",
+      "label": "User Score (Highest)"
+    },
+    {
+      "value": "critic_score_desc",
+      "label": "Critic Score (Highest)"
+    },
+    {
+      "value": "relevance_desc",
+      "label": "Relevance"
+    }
+  ],
+  "regions": [
+    {
+      "value": "US",
+      "label": "United States (US)"
+    },
+    {
+      "value": "IN",
+      "label": "India (IN)"
+    },
+    {
+      "value": "CA",
+      "label": "Canada (CA)"
+    }
+  ],
+  "topStreamingSources": [
+    {
+      "id": 203,
+      "name": "Netflix",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/netflix_100px.png"
+    },
+    {
+      "id": 157,
+      "name": "Hulu",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/hulu_100px.png"
+    },
+    {
+      "id": 387,
+      "name": "HBO Max",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/max_100px.png"
+    },
+    {
+      "id": 26,
+      "name": "Prime Video",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/prime_video_100px.png"
+    },
+    {
+      "id": 372,
+      "name": "Disney+",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/disneyPlus_100px.png"
+    },
+    {
+      "id": 371,
+      "name": "AppleTV+",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/appleTvPlus_100px.png"
+    },
+    {
+      "id": 444,
+      "name": "Paramount+",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/paramountPlus_100px.png"
+    },
+    {
+      "id": 455,
+      "name": "Paramount+ with Showtime",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/paramountPlusShowtime_100px.png"
+    },
+    {
+      "id": 388,
+      "name": "Peacock",
+      "type": "free",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/peacock_100px.png"
+    },
+    {
+      "id": 389,
+      "name": "Peacock Premium",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/peacockPremium_100px.png"
+    },
+    {
+      "id": 365,
+      "name": "Amazon Freevee",
+      "type": "free",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/freevee_100px.png"
+    },
+    {
+      "id": 440,
+      "name": "Netflix Free",
+      "type": "free",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/netflixFree_100px.png"
+    },
+    {
+      "id": 232,
+      "name": "STARZ",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/starz_100px.png"
+    },
+    {
+      "id": 108,
+      "name": "MGM+",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/mgmplus_100px.png"
+    },
+    {
+      "id": 296,
+      "name": "Tubi TV",
+      "type": "free",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/tubi_100px.png"
+    },
+    {
+      "id": 80,
+      "name": "Crunchyroll Premium",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/crunchyroll_100px.png"
+    },
+    {
+      "id": 366,
+      "name": "The Criterion Channel",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/criterion_100px.png"
+    },
+    {
+      "id": 367,
+      "name": "Kanopy",
+      "type": "sub",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/kanopy_100px.png"
+    },
+    {
+      "id": 344,
+      "name": "YouTube",
+      "type": "free",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/youtube_100px.png"
+    },
+    {
+      "id": 349,
+      "name": "Google Play",
+      "type": "buy",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/googlePlay_100px.png"
+    },
+    {
+      "id": 140,
+      "name": "iTunes",
+      "type": "buy",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/itunes_100px.png"
+    },
+    {
+      "id": 307,
+      "name": "VUDU",
+      "type": "buy",
+      "logo_100px": "https://cdn.watchmode.com/provider_logos/vudu_100px.png"
+    }
+  ],
+  "allStreamingSources": [
+    {
+      "id": 427,
+      "name": "7plus",
+      "type": "free",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 426,
+      "name": "9Now",
+      "type": "free",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 7,
+      "name": "A&E",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 10,
+      "name": "ABC",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 428,
+      "name": "ABC iview",
+      "type": "free",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 17,
+      "name": "Acorn TV",
+      "type": "sub",
+      "regions": [
+        "GB",
+        "US",
+        "CA",
+        "AU",
+        "NZ"
+      ]
+    },
+    {
+      "id": 18,
+      "name": "Acorn TV (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA",
+        "NL",
+        "MX",
+        "ES",
+        "AU",
+        "GB"
+      ]
+    },
+    {
+      "id": 647,
+      "name": "Acorn TV Apple TV Channel",
+      "type": "sub",
+      "regions": [
+        "AU",
+        "CA",
+        "ES",
+        "GB",
+        "US"
+      ]
+    },
+    {
+      "id": 614,
+      "name": "ADN Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "DE",
+        "FR"
+      ]
+    },
+    {
+      "id": 19,
+      "name": "Adult Swim",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 12,
+      "name": "AHC GO",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 407,
+      "name": "All 4",
+      "type": "free",
+      "regions": [
+        "GB",
+        "IE"
+      ]
+    },
+    {
+      "id": 506,
+      "name": "Allente",
+      "type": "sub",
+      "regions": [
+        "DK"
+      ]
+    },
+    {
+      "id": 24,
+      "name": "Amazon",
+      "type": "purchase",
+      "regions": [
+        "AR",
+        "AT",
+        "AU",
+        "BE",
+        "BR",
+        "CA",
+        "CH",
+        "CO",
+        "DE",
+        "DK",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "IE",
+        "IN",
+        "IS",
+        "IT",
+        "JP",
+        "MX",
+        "NL",
+        "NO",
+        "NZ",
+        "PL",
+        "PT",
+        "SE",
+        "US"
+      ]
+    },
+    {
+      "id": 365,
+      "name": "Amazon Freevee",
+      "type": "free",
+      "regions": [
+        "GB",
+        "US",
+        "DE",
+        "AT"
+      ]
+    },
+    {
+      "id": 461,
+      "name": "Amazon MX Player",
+      "type": "free",
+      "regions": [
+        "IN"
+      ]
+    },
+    {
+      "id": 13,
+      "name": "AMC",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 625,
+      "name": "AMC Plus Apple TV Channel",
+      "type": "sub",
+      "regions": [
+        "AU",
+        "CA",
+        "ES",
+        "US"
+      ]
+    },
+    {
+      "id": 378,
+      "name": "AMC+",
+      "type": "sub",
+      "regions": [
+        "AU",
+        "CA",
+        "NZ",
+        "US"
+      ]
+    },
+    {
+      "id": 613,
+      "name": "AMC+ Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "AU",
+        "CA",
+        "ES",
+        "US"
+      ]
+    },
+    {
+      "id": 30,
+      "name": "Animal Planet GO",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 551,
+      "name": "Animation Digital Network",
+      "type": "sub",
+      "regions": [
+        "DE",
+        "FR"
+      ]
+    },
+    {
+      "id": 572,
+      "name": "Anime Times Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "IN",
+        "JP"
+      ]
+    },
+    {
+      "id": 602,
+      "name": "Aniverse Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "DE"
+      ]
+    },
+    {
+      "id": 522,
+      "name": "Apple TV",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 349,
+      "name": "AppleTV",
+      "type": "purchase",
+      "regions": [
+        "US",
+        "CA",
+        "GB",
+        "JP",
+        "DE",
+        "AT",
+        "CH",
+        "AU",
+        "BE",
+        "FR",
+        "DK",
+        "FI",
+        "IE",
+        "NO",
+        "SE",
+        "IT",
+        "BR",
+        "ES",
+        "NL",
+        "AR",
+        "CO",
+        "MX",
+        "PL",
+        "NZ",
+        "PT",
+        "SG",
+        "ZA",
+        "IN"
+      ]
+    },
+    {
+      "id": 371,
+      "name": "AppleTV+",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA",
+        "GB",
+        "AU",
+        "BR",
+        "CH",
+        "CO",
+        "DK",
+        "EC",
+        "ES",
+        "HU",
+        "ID",
+        "IN",
+        "LT",
+        "MY",
+        "NL",
+        "NO",
+        "NZ",
+        "PE",
+        "PH",
+        "PL",
+        "RU",
+        "SE",
+        "UA",
+        "AR",
+        "BE",
+        "BG",
+        "CL",
+        "CZ",
+        "DE",
+        "EE",
+        "FI",
+        "FR",
+        "GR",
+        "HK",
+        "IE",
+        "IL",
+        "JP",
+        "KR",
+        "MX",
+        "PA",
+        "PT",
+        "SG",
+        "TH",
+        "VN",
+        "ZA",
+        "AE",
+        "AT",
+        "IT"
+      ]
+    },
+    {
+      "id": 612,
+      "name": "AppleTV+ Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "AR",
+        "AT",
+        "AU",
+        "BE",
+        "BR",
+        "CA",
+        "CO",
+        "DE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "IN",
+        "IT",
+        "JP",
+        "MX",
+        "NL",
+        "NZ",
+        "PL",
+        "SE",
+        "US"
+      ]
+    },
+    {
+      "id": 567,
+      "name": "ARD Plus",
+      "type": "sub",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 532,
+      "name": "ARD Plus (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "CH",
+        "DE"
+      ]
+    },
+    {
+      "id": 626,
+      "name": "ARD Plus Apple TV Channel",
+      "type": "sub",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 566,
+      "name": "Arrow Video Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 467,
+      "name": "Arrow Video Channel",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA",
+        "GB"
+      ]
+    },
+    {
+      "id": 546,
+      "name": "Atres Player",
+      "type": "sub",
+      "regions": [
+        "ES"
+      ]
+    },
+    {
+      "id": 32,
+      "name": "BBC America",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 409,
+      "name": "BBC iPlayer",
+      "type": "free",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 649,
+      "name": "BBC Player Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "DE",
+        "IN"
+      ]
+    },
+    {
+      "id": 437,
+      "name": "Beamafilm",
+      "type": "sub",
+      "regions": [
+        "AU",
+        "NZ"
+      ]
+    },
+    {
+      "id": 595,
+      "name": "beIN Sports",
+      "type": "sub",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 34,
+      "name": "BET",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 382,
+      "name": "BET+",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 410,
+      "name": "BFI Player",
+      "type": "sub",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 423,
+      "name": "BINGE",
+      "type": "sub",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 494,
+      "name": "Blockbuster",
+      "type": "purchase",
+      "regions": [
+        "DK",
+        "FI",
+        "NO",
+        "SE"
+      ]
+    },
+    {
+      "id": 568,
+      "name": "blue TV",
+      "type": "purchase",
+      "regions": [
+        "CH"
+      ]
+    },
+    {
+      "id": 46,
+      "name": "Bravo",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 376,
+      "name": "Britbox",
+      "type": "sub",
+      "regions": [
+        "GB",
+        "US",
+        "CA",
+        "AU",
+        "DK",
+        "FI",
+        "NO",
+        "SE"
+      ]
+    },
+    {
+      "id": 377,
+      "name": "Britbox (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA",
+        "AU",
+        "SE",
+        "GB"
+      ]
+    },
+    {
+      "id": 419,
+      "name": "Britbox UK",
+      "type": "sub",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 496,
+      "name": "Canal VOD",
+      "type": "purchase",
+      "regions": [
+        "FR"
+      ]
+    },
+    {
+      "id": 517,
+      "name": "Canal+",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "CH",
+        "FR",
+        "NL"
+      ]
+    },
+    {
+      "id": 62,
+      "name": "Cartoon Network",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 402,
+      "name": "CBC Gem",
+      "type": "free",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 50,
+      "name": "CBS",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 53,
+      "name": "CBS News",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 604,
+      "name": "CDA Premium",
+      "type": "sub",
+      "regions": [
+        "PL"
+      ]
+    },
+    {
+      "id": 441,
+      "name": "Chili",
+      "type": "purchase",
+      "regions": [
+        "GB",
+        "PL",
+        "IT"
+      ]
+    },
+    {
+      "id": 68,
+      "name": "Cinemax (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 384,
+      "name": "Cinemax (Via Hulu)",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 397,
+      "name": "Cineplex",
+      "type": "purchase",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 481,
+      "name": "Cineverse",
+      "type": "free",
+      "regions": [
+        "CA",
+        "US"
+      ]
+    },
+    {
+      "id": 618,
+      "name": "Cinu",
+      "type": "sub",
+      "regions": [
+        "CH"
+      ]
+    },
+    {
+      "id": 473,
+      "name": "Citytv+",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 484,
+      "name": "Citytv+ (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 549,
+      "name": "Claro tv+",
+      "type": "sub",
+      "regions": [
+        "BR"
+      ]
+    },
+    {
+      "id": 449,
+      "name": "Clarovideo",
+      "type": "sub",
+      "regions": [
+        "BR",
+        "AR",
+        "CO",
+        "MX"
+      ]
+    },
+    {
+      "id": 476,
+      "name": "Club Illico",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 393,
+      "name": "Crave",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 483,
+      "name": "Crave (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 395,
+      "name": "Crave Starz",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 79,
+      "name": "Crunchyroll",
+      "type": "free",
+      "regions": [
+        "CA",
+        "US",
+        "GB"
+      ]
+    },
+    {
+      "id": 80,
+      "name": "Crunchyroll Premium",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA",
+        "IN",
+        "BE",
+        "FR",
+        "CH",
+        "AU",
+        "BR",
+        "ES",
+        "AT",
+        "IT",
+        "AR",
+        "DE",
+        "NL",
+        "NZ",
+        "PT",
+        "SE",
+        "SG",
+        "GB",
+        "CO",
+        "DK",
+        "FI",
+        "IS",
+        "IE",
+        "MX",
+        "NO",
+        "PL",
+        "ZA",
+        "KR"
+      ]
+    },
+    {
+      "id": 491,
+      "name": "Crunchyroll Premium (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "AR",
+        "AT",
+        "AU",
+        "BE",
+        "BR",
+        "CA",
+        "CO",
+        "DE",
+        "ES",
+        "FR",
+        "GB",
+        "IN",
+        "IT",
+        "MX",
+        "NL",
+        "NZ",
+        "PL",
+        "SE",
+        "US"
+      ]
+    },
+    {
+      "id": 403,
+      "name": "CTV",
+      "type": "free",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 421,
+      "name": "Curiosity Stream",
+      "type": "sub",
+      "regions": [
+        "AR",
+        "BE",
+        "CO",
+        "CA",
+        "DE",
+        "FI",
+        "IS",
+        "NO",
+        "PL",
+        "AT",
+        "ZA",
+        "AE",
+        "BG",
+        "CH",
+        "CL",
+        "CZ",
+        "EC",
+        "GR",
+        "HK",
+        "HR",
+        "HU",
+        "ID",
+        "IL",
+        "MY",
+        "PA",
+        "PE",
+        "PH",
+        "PT",
+        "RO",
+        "RS",
+        "RU",
+        "TH",
+        "TR",
+        "UA",
+        "VN",
+        "IT",
+        "US",
+        "GB",
+        "AU",
+        "BR",
+        "DK",
+        "EE",
+        "ES",
+        "FR",
+        "IE",
+        "IN",
+        "JP",
+        "KR",
+        "NL",
+        "NZ",
+        "SE",
+        "SG",
+        "LT",
+        "MX"
+      ]
+    },
+    {
+      "id": 81,
+      "name": "Curiosity Stream (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "US",
+        "GB"
+      ]
+    },
+    {
+      "id": 412,
+      "name": "Curzon Home Cinema",
+      "type": "purchase",
+      "regions": [
+        "GB",
+        "IE"
+      ]
+    },
+    {
+      "id": 573,
+      "name": "dAnime Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "IT",
+        "JP",
+        "US"
+      ]
+    },
+    {
+      "id": 405,
+      "name": "Darkmatter TV",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA"
+      ]
+    },
+    {
+      "id": 530,
+      "name": "DAZN",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 86,
+      "name": "Destination America GO",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 442,
+      "name": "DirecTV On Demand",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 520,
+      "name": "DIRECTV Stream",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 91,
+      "name": "Discovery GO",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 93,
+      "name": "Discovery Life GO",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 445,
+      "name": "Discovery+",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "CA",
+        "DE",
+        "GB",
+        "IE",
+        "IN",
+        "IT",
+        "US"
+      ]
+    },
+    {
+      "id": 493,
+      "name": "Discovery+ (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "CA",
+        "DE",
+        "GB",
+        "IN",
+        "IT",
+        "US"
+      ]
+    },
+    {
+      "id": 372,
+      "name": "Disney+",
+      "type": "sub",
+      "regions": [
+        "US",
+        "GB",
+        "AR",
+        "BE",
+        "CH",
+        "CL",
+        "CO",
+        "DE",
+        "DK",
+        "EC",
+        "ES",
+        "FI",
+        "FR",
+        "IS",
+        "JP",
+        "MX",
+        "NL",
+        "NO",
+        "NZ",
+        "PE",
+        "PT",
+        "SE",
+        "CA",
+        "AU",
+        "BR",
+        "AT",
+        "IT",
+        "LT",
+        "BG",
+        "CZ",
+        "EE",
+        "GR",
+        "HR",
+        "HK",
+        "HU",
+        "KR",
+        "PA",
+        "PL",
+        "RO",
+        "RS",
+        "SG",
+        "TR",
+        "IE",
+        "PH"
+      ]
+    },
+    {
+      "id": 639,
+      "name": "Elisa Viihde",
+      "type": "sub",
+      "regions": [
+        "FI"
+      ]
+    },
+    {
+      "id": 526,
+      "name": "ESPN",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 525,
+      "name": "ESPN Deportes",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 521,
+      "name": "ESPN+",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 585,
+      "name": "F1TV Pro",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 307,
+      "name": "Fandango at Home",
+      "type": "purchase",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 308,
+      "name": "Fandango at Home Free",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 125,
+      "name": "Fandor",
+      "type": "sub",
+      "regions": [
+        "CA",
+        "US"
+      ]
+    },
+    {
+      "id": 126,
+      "name": "Fandor (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "US",
+        "GB"
+      ]
+    },
+    {
+      "id": 462,
+      "name": "Fawesome",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 436,
+      "name": "Fetch TV",
+      "type": "purchase",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 457,
+      "name": "FILMIN",
+      "type": "sub",
+      "regions": [
+        "ES",
+        "PT"
+      ]
+    },
+    {
+      "id": 617,
+      "name": "filmingo",
+      "type": "purchase",
+      "regions": [
+        "AT",
+        "CH",
+        "DE"
+      ]
+    },
+    {
+      "id": 422,
+      "name": "Flix Premiere",
+      "type": "sub",
+      "regions": [
+        "US",
+        "GB"
+      ]
+    },
+    {
+      "id": 399,
+      "name": "FlixFling",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA"
+      ]
+    },
+    {
+      "id": 531,
+      "name": "Flo Rugby",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 516,
+      "name": "FOD",
+      "type": "sub",
+      "regions": [
+        "JP"
+      ]
+    },
+    {
+      "id": 624,
+      "name": "FOD Channel Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "JP"
+      ]
+    },
+    {
+      "id": 131,
+      "name": "Food Network",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 114,
+      "name": "FOX",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 563,
+      "name": "FOX One",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 564,
+      "name": "FOX One Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 527,
+      "name": "Fox Sports 1",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 424,
+      "name": "Foxtel Now",
+      "type": "sub",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 361,
+      "name": "Freeform",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 505,
+      "name": "Freenet meinVOD",
+      "type": "purchase",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 373,
+      "name": "fuboTV",
+      "type": "sub",
+      "regions": [
+        "ES",
+        "US",
+        "CA"
+      ]
+    },
+    {
+      "id": 122,
+      "name": "FX",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 347,
+      "name": "fyi",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 475,
+      "name": "Global TV",
+      "type": "free",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 448,
+      "name": "Globoplay",
+      "type": "sub",
+      "regions": [
+        "BR"
+      ]
+    },
+    {
+      "id": 140,
+      "name": "Google Play",
+      "type": "purchase",
+      "regions": [
+        "AU",
+        "BR",
+        "CA",
+        "GB",
+        "US"
+      ]
+    },
+    {
+      "id": 401,
+      "name": "GuideDoc",
+      "type": "sub",
+      "regions": [
+        "DE",
+        "US",
+        "CA",
+        "GB",
+        "AU",
+        "ES",
+        "IN",
+        "NL",
+        "IT",
+        "MX",
+        "NZ",
+        "KR",
+        "AT",
+        "DK",
+        "IE",
+        "PL",
+        "SG",
+        "CH",
+        "FI",
+        "NO",
+        "SE",
+        "ZA"
+      ]
+    },
+    {
+      "id": 151,
+      "name": "Hallmark Channel Everywhere",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 152,
+      "name": "Hallmark Movies Now",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 358,
+      "name": "Hallmark Movies Now (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 392,
+      "name": "Hayu",
+      "type": "sub",
+      "regions": [
+        "GB",
+        "CA",
+        "AU",
+        "ES",
+        "BE",
+        "NL",
+        "IT",
+        "FR",
+        "DE",
+        "AT",
+        "DK",
+        "FI",
+        "IE",
+        "NO",
+        "PL",
+        "SG",
+        "SE",
+        "CH"
+      ]
+    },
+    {
+      "id": 492,
+      "name": "Hayu (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "AU",
+        "BE",
+        "CA",
+        "DE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "IT",
+        "NL",
+        "NZ",
+        "PL",
+        "PT",
+        "SE"
+      ]
+    },
+    {
+      "id": 385,
+      "name": "HBO (Via Hulu)",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 387,
+      "name": "HBO Max",
+      "type": "sub",
+      "regions": [
+        "AR",
+        "AT",
+        "AU",
+        "BE",
+        "BG",
+        "BR",
+        "CH",
+        "CL",
+        "CO",
+        "CZ",
+        "DE",
+        "DK",
+        "EC",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "HK",
+        "HR",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "IS",
+        "IT",
+        "MX",
+        "MY",
+        "NL",
+        "NO",
+        "NZ",
+        "PA",
+        "PE",
+        "PH",
+        "PL",
+        "PT",
+        "RO",
+        "RS",
+        "SE",
+        "SG",
+        "TH",
+        "TR",
+        "US"
+      ]
+    },
+    {
+      "id": 641,
+      "name": "HBO Max on U-NEXT",
+      "type": "sub",
+      "regions": [
+        "JP"
+      ]
+    },
+    {
+      "id": 147,
+      "name": "HGTV",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 420,
+      "name": "HiDive",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA"
+      ]
+    },
+    {
+      "id": 148,
+      "name": "HISTORY Vault (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 648,
+      "name": "HISTORY Vault Apple TV Channel",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 600,
+      "name": "HistoryPlay Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "DE",
+        "GB",
+        "IT",
+        "JP"
+      ]
+    },
+    {
+      "id": 400,
+      "name": "Hollywood Suite",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 390,
+      "name": "Hoopla",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA",
+        "AU",
+        "NZ"
+      ]
+    },
+    {
+      "id": 157,
+      "name": "Hulu",
+      "type": "sub",
+      "regions": [
+        "JP",
+        "US"
+      ]
+    },
+    {
+      "id": 634,
+      "name": "Hulu on Disney+",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 460,
+      "name": "Hungama Play",
+      "type": "sub",
+      "regions": [
+        "IN"
+      ]
+    },
+    {
+      "id": 396,
+      "name": "ICI TOU.TV",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 160,
+      "name": "IFC",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 165,
+      "name": "Investigation Discovery",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 166,
+      "name": "Investigation Discovery GO",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 413,
+      "name": "ITVX",
+      "type": "sub",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 615,
+      "name": "ITVX Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 543,
+      "name": "ITVX Premium",
+      "type": "sub",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 447,
+      "name": "JioHotstar",
+      "type": "sub",
+      "regions": [
+        "IN",
+        "SG"
+      ]
+    },
+    {
+      "id": 497,
+      "name": "Joyn",
+      "type": "free",
+      "regions": [
+        "AT",
+        "DE"
+      ]
+    },
+    {
+      "id": 587,
+      "name": "K League TV",
+      "type": "sub",
+      "regions": [
+        "CA",
+        "GB"
+      ]
+    },
+    {
+      "id": 367,
+      "name": "Kanopy",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 593,
+      "name": "Kayo Sports",
+      "type": "sub",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 470,
+      "name": "Kocowa",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "AU",
+        "BE",
+        "BR",
+        "CA",
+        "CH",
+        "DE",
+        "DK",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "IE",
+        "IT",
+        "MX",
+        "NL",
+        "NO",
+        "NZ",
+        "PL",
+        "PT",
+        "SE",
+        "US"
+      ]
+    },
+    {
+      "id": 170,
+      "name": "Lifetime",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 533,
+      "name": "Lionsgate+ (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "AU",
+        "BR",
+        "CA",
+        "CO",
+        "DE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "IN",
+        "IT",
+        "MX",
+        "NL",
+        "NZ",
+        "PL",
+        "PT",
+        "SE",
+        "US"
+      ]
+    },
+    {
+      "id": 169,
+      "name": "LOGO",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 550,
+      "name": "M6+",
+      "type": "free",
+      "regions": [
+        "FR"
+      ]
+    },
+    {
+      "id": 538,
+      "name": "Magenta TV+",
+      "type": "sub",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 512,
+      "name": "MagentaTV",
+      "type": "sub",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 490,
+      "name": "Max (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "AU",
+        "BE",
+        "BR",
+        "CO",
+        "DE",
+        "ES",
+        "FR",
+        "GB",
+        "IE",
+        "IT",
+        "MX",
+        "NL",
+        "NZ",
+        "SE",
+        "US"
+      ]
+    },
+    {
+      "id": 454,
+      "name": "MAX Free",
+      "type": "free",
+      "regions": [
+        "BR"
+      ]
+    },
+    {
+      "id": 488,
+      "name": "maxdome Store",
+      "type": "purchase",
+      "regions": [
+        "AT",
+        "DE"
+      ]
+    },
+    {
+      "id": 636,
+      "name": "Mediaset Infinity",
+      "type": "sub",
+      "regions": [
+        "IT"
+      ]
+    },
+    {
+      "id": 510,
+      "name": "Mercado Play",
+      "type": "free",
+      "regions": [
+        "AR",
+        "BR",
+        "CO",
+        "MX"
+      ]
+    },
+    {
+      "id": 108,
+      "name": "MGM+",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 375,
+      "name": "MGM+ (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "AU",
+        "BE",
+        "BR",
+        "CA",
+        "CO",
+        "DE",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "IN",
+        "IT",
+        "JP",
+        "MX",
+        "NL",
+        "NZ",
+        "PL",
+        "SE",
+        "US"
+      ]
+    },
+    {
+      "id": 479,
+      "name": "MHz Choice",
+      "type": "sub",
+      "regions": [
+        "CA",
+        "US"
+      ]
+    },
+    {
+      "id": 523,
+      "name": "MLB.TV",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 456,
+      "name": "Movistar+",
+      "type": "sub",
+      "regions": [
+        "ES"
+      ]
+    },
+    {
+      "id": 504,
+      "name": "MovistarTV",
+      "type": "sub",
+      "regions": [
+        "AR",
+        "CO"
+      ]
+    },
+    {
+      "id": 178,
+      "name": "MTV",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 553,
+      "name": "MTV Katsomo",
+      "type": "sub",
+      "regions": [
+        "FI"
+      ]
+    },
+    {
+      "id": 181,
+      "name": "MUBI",
+      "type": "sub",
+      "regions": [
+        "MX",
+        "NO",
+        "US",
+        "CA",
+        "GB",
+        "ES",
+        "JP",
+        "KR",
+        "AE",
+        "AT",
+        "BG",
+        "CH",
+        "DK",
+        "EE",
+        "FI",
+        "GR",
+        "HK",
+        "HR",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "MY",
+        "PH",
+        "PL",
+        "RO",
+        "RS",
+        "SE",
+        "SG",
+        "TH",
+        "UA",
+        "ZA",
+        "DE",
+        "IS",
+        "PT",
+        "VN",
+        "AR",
+        "CO",
+        "CL",
+        "LT",
+        "PA",
+        "FR",
+        "TR",
+        "PE",
+        "BE",
+        "IN",
+        "NL",
+        "BR",
+        "AU",
+        "IT",
+        "NZ",
+        "RU",
+        "EC"
+      ]
+    },
+    {
+      "id": 418,
+      "name": "My5",
+      "type": "free",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 198,
+      "name": "National Geographic",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 192,
+      "name": "NBC",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 194,
+      "name": "NBC News",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 507,
+      "name": "Neon TV",
+      "type": "sub",
+      "regions": [
+        "NZ"
+      ]
+    },
+    {
+      "id": 203,
+      "name": "Netflix",
+      "type": "sub",
+      "regions": [
+        "CH",
+        "US",
+        "CA",
+        "GB",
+        "AU",
+        "BR",
+        "ES",
+        "AT",
+        "CL",
+        "DE",
+        "FR",
+        "IS",
+        "AR",
+        "BE",
+        "BG",
+        "CO",
+        "CZ",
+        "DK",
+        "EC",
+        "EE",
+        "FI",
+        "GR",
+        "HK",
+        "HR",
+        "HU",
+        "ID",
+        "IE",
+        "IL",
+        "IN",
+        "IT",
+        "JP",
+        "KR",
+        "LT",
+        "MX",
+        "MY",
+        "NO",
+        "NZ",
+        "PA",
+        "PE",
+        "PH",
+        "PL",
+        "PT",
+        "RO",
+        "RS",
+        "SE",
+        "SG",
+        "TH",
+        "TR",
+        "UA",
+        "ZA",
+        "AE",
+        "VN",
+        "NL",
+        "RU"
+      ]
+    },
+    {
+      "id": 440,
+      "name": "Netflix Free",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 466,
+      "name": "NLZIET",
+      "type": "sub",
+      "regions": [
+        "NL"
+      ]
+    },
+    {
+      "id": 477,
+      "name": "Noovo",
+      "type": "free",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 406,
+      "name": "Now TV",
+      "type": "sub",
+      "regions": [
+        "GB",
+        "IT",
+        "IE"
+      ]
+    },
+    {
+      "id": 640,
+      "name": "NPO Plus",
+      "type": "sub",
+      "regions": [
+        "NL"
+      ]
+    },
+    {
+      "id": 599,
+      "name": "NRK TV",
+      "type": "free",
+      "regions": [
+        "NO"
+      ]
+    },
+    {
+      "id": 586,
+      "name": "NWSL+",
+      "type": "sub",
+      "regions": [
+        "CA",
+        "GB"
+      ]
+    },
+    {
+      "id": 480,
+      "name": "OnDemandKorea",
+      "type": "free",
+      "regions": [
+        "AR",
+        "US"
+      ]
+    },
+    {
+      "id": 594,
+      "name": "Optus Sport",
+      "type": "sub",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 518,
+      "name": "Orange VOD",
+      "type": "purchase",
+      "regions": [
+        "FR"
+      ]
+    },
+    {
+      "id": 214,
+      "name": "Oxygen",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 435,
+      "name": "OzFlix",
+      "type": "purchase",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 221,
+      "name": "Paramount Network",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 444,
+      "name": "Paramount+",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA",
+        "BR",
+        "AR",
+        "CO",
+        "MX",
+        "FR",
+        "AU",
+        "GB",
+        "CH",
+        "DE",
+        "AT",
+        "IT",
+        "IE",
+        "CL",
+        "EC",
+        "PA",
+        "PE"
+      ]
+    },
+    {
+      "id": 489,
+      "name": "Paramount+ (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "AR",
+        "AT",
+        "AU",
+        "BR",
+        "CA",
+        "CO",
+        "DE",
+        "FR",
+        "GB",
+        "IE",
+        "IT",
+        "MX",
+        "US"
+      ]
+    },
+    {
+      "id": 501,
+      "name": "Paramount+ (Via Apple TV)",
+      "type": "sub",
+      "regions": [
+        "AR",
+        "AT",
+        "AU",
+        "BR",
+        "CA",
+        "CH",
+        "CO",
+        "DE",
+        "FR",
+        "GB",
+        "IE",
+        "IT",
+        "MX",
+        "US"
+      ]
+    },
+    {
+      "id": 455,
+      "name": "Paramount+ with Showtime",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 621,
+      "name": "Pathé Home",
+      "type": "purchase",
+      "regions": [
+        "FR"
+      ]
+    },
+    {
+      "id": 637,
+      "name": "Pathé Thuis",
+      "type": "purchase",
+      "regions": [
+        "NL"
+      ]
+    },
+    {
+      "id": 215,
+      "name": "PBS",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 217,
+      "name": "PBS Kids",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 485,
+      "name": "PBS Masterpiece (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "CA",
+        "US"
+      ]
+    },
+    {
+      "id": 388,
+      "name": "Peacock",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 389,
+      "name": "Peacock Premium",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 565,
+      "name": "Peacock Premium Plus Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 468,
+      "name": "Philo",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 638,
+      "name": "Pilot WP",
+      "type": "sub",
+      "regions": [
+        "PL"
+      ]
+    },
+    {
+      "id": 616,
+      "name": "Play Suisse",
+      "type": "free",
+      "regions": [
+        "CH"
+      ]
+    },
+    {
+      "id": 620,
+      "name": "Player",
+      "type": "purchase",
+      "regions": [
+        "PL"
+      ]
+    },
+    {
+      "id": 439,
+      "name": "Plex",
+      "type": "free",
+      "regions": [
+        "US",
+        "CA"
+      ]
+    },
+    {
+      "id": 391,
+      "name": "Pluto TV",
+      "type": "free",
+      "regions": [
+        "US",
+        "DE",
+        "BR",
+        "AR",
+        "CO",
+        "MX",
+        "NO",
+        "SE",
+        "DK",
+        "FR",
+        "CA",
+        "GB",
+        "ES",
+        "IT",
+        "AT",
+        "CH"
+      ]
+    },
+    {
+      "id": 225,
+      "name": "Popcornflix",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 584,
+      "name": "Premier Sports",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 535,
+      "name": "Premiere Max",
+      "type": "purchase",
+      "regions": [
+        "FR"
+      ]
+    },
+    {
+      "id": 26,
+      "name": "Prime Video",
+      "type": "sub",
+      "regions": [
+        "US",
+        "ES",
+        "DK",
+        "FI",
+        "SE",
+        "PE",
+        "CL",
+        "PA",
+        "NO",
+        "AT",
+        "GB",
+        "CA",
+        "AU",
+        "IT",
+        "AR",
+        "BE",
+        "FR",
+        "DE",
+        "IE",
+        "NL",
+        "NZ",
+        "ZA",
+        "CH",
+        "IS",
+        "BR",
+        "MX",
+        "CO",
+        "EC",
+        "PT",
+        "JP",
+        "RO",
+        "IN",
+        "PH",
+        "VN",
+        "HU",
+        "LT",
+        "AE",
+        "CZ",
+        "HK",
+        "HR",
+        "ID",
+        "MY",
+        "RS",
+        "TH",
+        "TR",
+        "BG",
+        "IL",
+        "UA",
+        "GR",
+        "KR",
+        "SG",
+        "PL",
+        "EE",
+        "RU"
+      ]
+    },
+    {
+      "id": 417,
+      "name": "Rakuten TV",
+      "type": "purchase",
+      "regions": [
+        "DE",
+        "AT",
+        "CH",
+        "BE",
+        "FR",
+        "GB",
+        "IE",
+        "DK",
+        "NL",
+        "IT",
+        "PT",
+        "FI",
+        "NO",
+        "SE",
+        "ES",
+        "PL"
+      ]
+    },
+    {
+      "id": 471,
+      "name": "Rakuten Viki",
+      "type": "sub",
+      "regions": [
+        "CA",
+        "DE",
+        "ES",
+        "IS",
+        "US"
+      ]
+    },
+    {
+      "id": 580,
+      "name": "RDS",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 589,
+      "name": "RDS (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 503,
+      "name": "RTL+",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "DE"
+      ]
+    },
+    {
+      "id": 622,
+      "name": "RTL+ Max Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 541,
+      "name": "Ruutu",
+      "type": "sub",
+      "regions": [
+        "FI"
+      ]
+    },
+    {
+      "id": 429,
+      "name": "SBS On Demand",
+      "type": "free",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 237,
+      "name": "Science GO",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 487,
+      "name": "SF Anytime",
+      "type": "purchase",
+      "regions": [
+        "DK",
+        "FI",
+        "NO",
+        "SE"
+      ]
+    },
+    {
+      "id": 575,
+      "name": "SFR Play",
+      "type": "sub",
+      "regions": [
+        "FR"
+      ]
+    },
+    {
+      "id": 246,
+      "name": "Shout! Factory TV",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 247,
+      "name": "Shout! Factory TV (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "US",
+        "GB"
+      ]
+    },
+    {
+      "id": 252,
+      "name": "Shudder",
+      "type": "sub",
+      "regions": [
+        "CA",
+        "AU",
+        "NZ",
+        "US",
+        "GB",
+        "IE"
+      ]
+    },
+    {
+      "id": 253,
+      "name": "Shudder (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "US",
+        "AU",
+        "GB",
+        "CA"
+      ]
+    },
+    {
+      "id": 536,
+      "name": "Sky",
+      "type": "sub",
+      "regions": [
+        "CH"
+      ]
+    },
+    {
+      "id": 408,
+      "name": "Sky Go",
+      "type": "sub",
+      "regions": [
+        "GB",
+        "IE",
+        "IT",
+        "DE",
+        "AT"
+      ]
+    },
+    {
+      "id": 592,
+      "name": "Sky Sports",
+      "type": "sub",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 411,
+      "name": "Sky Store",
+      "type": "purchase",
+      "regions": [
+        "GB",
+        "DE",
+        "AT",
+        "CH",
+        "IE"
+      ]
+    },
+    {
+      "id": 598,
+      "name": "Sky X",
+      "type": "sub",
+      "regions": [
+        "AT"
+      ]
+    },
+    {
+      "id": 464,
+      "name": "SkyShowtime",
+      "type": "sub",
+      "regions": [
+        "NL",
+        "PL",
+        "ES",
+        "DK",
+        "FI",
+        "NO",
+        "PT",
+        "SE"
+      ]
+    },
+    {
+      "id": 643,
+      "name": "SkyShowtime on TV 2 Play",
+      "type": "sub",
+      "regions": [
+        "DK"
+      ]
+    },
+    {
+      "id": 519,
+      "name": "Sling TV",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 459,
+      "name": "Sony LIV",
+      "type": "sub",
+      "regions": [
+        "IN"
+      ]
+    },
+    {
+      "id": 645,
+      "name": "Sony One Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "AR",
+        "BR",
+        "CO",
+        "MX"
+      ]
+    },
+    {
+      "id": 603,
+      "name": "Sooner",
+      "type": "purchase",
+      "regions": [
+        "BE",
+        "FR",
+        "NL"
+      ]
+    },
+    {
+      "id": 259,
+      "name": "South Park Studios",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 443,
+      "name": "Spectrum On Demand",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 590,
+      "name": "Sportsnet (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 582,
+      "name": "Sportsnet+",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 482,
+      "name": "StackTV (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 425,
+      "name": "Stan",
+      "type": "sub",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 232,
+      "name": "STARZ",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 234,
+      "name": "STARZ (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 386,
+      "name": "STARZ (Via Hulu)",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 495,
+      "name": "Strim",
+      "type": "sub",
+      "regions": [
+        "NO"
+      ]
+    },
+    {
+      "id": 433,
+      "name": "Sun Nxt",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA",
+        "AU",
+        "IN",
+        "NZ",
+        "IS",
+        "SG",
+        "ZA"
+      ]
+    },
+    {
+      "id": 267,
+      "name": "Sundance",
+      "type": "tve",
+      "regions": [
+        "US",
+        "CA"
+      ]
+    },
+    {
+      "id": 268,
+      "name": "SundanceNow Doc Club",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA"
+      ]
+    },
+    {
+      "id": 269,
+      "name": "SundanceNow Doc Club (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "CA",
+        "US",
+        "GB"
+      ]
+    },
+    {
+      "id": 635,
+      "name": "SVT",
+      "type": "free",
+      "regions": [
+        "SE"
+      ]
+    },
+    {
+      "id": 270,
+      "name": "Syfy",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 415,
+      "name": "Talk Talk TV",
+      "type": "purchase",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 272,
+      "name": "TBS",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 514,
+      "name": "Tele2 Play",
+      "type": "sub",
+      "regions": [
+        "SE"
+      ]
+    },
+    {
+      "id": 605,
+      "name": "TELETOON+ Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 619,
+      "name": "Telia Play",
+      "type": "purchase",
+      "regions": [
+        "FI"
+      ]
+    },
+    {
+      "id": 528,
+      "name": "Tennis Channel",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 529,
+      "name": "Tennis Channel Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 430,
+      "name": "tenplay",
+      "type": "free",
+      "regions": [
+        "AU"
+      ]
+    },
+    {
+      "id": 545,
+      "name": "TF1+",
+      "type": "sub",
+      "regions": [
+        "FR"
+      ]
+    },
+    {
+      "id": 366,
+      "name": "The Criterion Channel",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA"
+      ]
+    },
+    {
+      "id": 284,
+      "name": "The CW",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 287,
+      "name": "The History Channel",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 452,
+      "name": "The Roku Channel",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 601,
+      "name": "ThreeNow",
+      "type": "free",
+      "regions": [
+        "NZ"
+      ]
+    },
+    {
+      "id": 544,
+      "name": "Timvision",
+      "type": "purchase",
+      "regions": [
+        "IT"
+      ]
+    },
+    {
+      "id": 274,
+      "name": "TLC GO",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 276,
+      "name": "TNT",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 548,
+      "name": "Toggo",
+      "type": "free",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 451,
+      "name": "Topic",
+      "type": "sub",
+      "regions": [
+        "US",
+        "CA"
+      ]
+    },
+    {
+      "id": 292,
+      "name": "Travel Channel",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 353,
+      "name": "truTV",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 579,
+      "name": "TSN",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 588,
+      "name": "TSN (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 581,
+      "name": "TSN Plus",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 296,
+      "name": "Tubi TV",
+      "type": "free",
+      "regions": [
+        "US",
+        "CA",
+        "AU",
+        "GB",
+        "MX",
+        "IN"
+      ]
+    },
+    {
+      "id": 574,
+      "name": "TV 2",
+      "type": "sub",
+      "regions": [
+        "DK"
+      ]
+    },
+    {
+      "id": 542,
+      "name": "TV 2 Play",
+      "type": "purchase",
+      "regions": [
+        "NO"
+      ]
+    },
+    {
+      "id": 277,
+      "name": "TV Land",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 571,
+      "name": "TV4 Play",
+      "type": "sub",
+      "regions": [
+        "SE"
+      ]
+    },
+    {
+      "id": 591,
+      "name": "TVA Sports Direct (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 583,
+      "name": "TVA+",
+      "type": "sub",
+      "regions": [
+        "CA"
+      ]
+    },
+    {
+      "id": 513,
+      "name": "TVING",
+      "type": "sub",
+      "regions": [
+        "KR"
+      ]
+    },
+    {
+      "id": 539,
+      "name": "TVNZ+",
+      "type": "free",
+      "regions": [
+        "NZ"
+      ]
+    },
+    {
+      "id": 508,
+      "name": "U-NEXT",
+      "type": "sub",
+      "regions": [
+        "JP"
+      ]
+    },
+    {
+      "id": 416,
+      "name": "UKTV Play",
+      "type": "free",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 502,
+      "name": "Universal+ (Via Amazon Prime)",
+      "type": "sub",
+      "regions": [
+        "AR",
+        "BE",
+        "BR",
+        "CO",
+        "FR",
+        "MX"
+      ]
+    },
+    {
+      "id": 570,
+      "name": "UPC TV",
+      "type": "purchase",
+      "regions": [
+        "CH"
+      ]
+    },
+    {
+      "id": 299,
+      "name": "USA",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 302,
+      "name": "VH1",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 597,
+      "name": "VI movies and tv",
+      "type": "sub",
+      "regions": [
+        "IN"
+      ]
+    },
+    {
+      "id": 486,
+      "name": "Viaplay",
+      "type": "purchase",
+      "regions": [
+        "DK",
+        "FI",
+        "IS",
+        "NL",
+        "NO",
+        "PL",
+        "SE"
+      ]
+    },
+    {
+      "id": 305,
+      "name": "Vice TV",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 547,
+      "name": "Videobuster",
+      "type": "purchase",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 465,
+      "name": "Videoland",
+      "type": "sub",
+      "regions": [
+        "NL"
+      ]
+    },
+    {
+      "id": 511,
+      "name": "Videoload",
+      "type": "purchase",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 313,
+      "name": "Vimeo",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 446,
+      "name": "Virgin TV GO",
+      "type": "sub",
+      "regions": [
+        "GB"
+      ]
+    },
+    {
+      "id": 534,
+      "name": "VIVA by videofutur",
+      "type": "purchase",
+      "regions": [
+        "FR"
+      ]
+    },
+    {
+      "id": 474,
+      "name": "ViX",
+      "type": "free",
+      "regions": [
+        "AR",
+        "CO",
+        "MX",
+        "US"
+      ]
+    },
+    {
+      "id": 644,
+      "name": "ViX Premium Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "AR",
+        "CO",
+        "MX",
+        "US"
+      ]
+    },
+    {
+      "id": 330,
+      "name": "Watch Food Network",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 331,
+      "name": "Watch HGTV",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 332,
+      "name": "Watch TCM",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 333,
+      "name": "Watch Travel Channel",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 509,
+      "name": "Watcha",
+      "type": "sub",
+      "regions": [
+        "KR"
+      ]
+    },
+    {
+      "id": 515,
+      "name": "wavve",
+      "type": "sub",
+      "regions": [
+        "KR"
+      ]
+    },
+    {
+      "id": 315,
+      "name": "WE tv",
+      "type": "tve",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 478,
+      "name": "WETA+",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 398,
+      "name": "Windows Store",
+      "type": "purchase",
+      "regions": [
+        "AU",
+        "BR",
+        "CA",
+        "GB",
+        "US"
+      ]
+    },
+    {
+      "id": 524,
+      "name": "WNBA League Pass",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 537,
+      "name": "WOW",
+      "type": "sub",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 642,
+      "name": "WOW Fiction Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 540,
+      "name": "WOW Presents Plus",
+      "type": "sub",
+      "regions": [
+        "AR",
+        "AT",
+        "AU",
+        "BE",
+        "BR",
+        "CA",
+        "CH",
+        "CO",
+        "DE",
+        "DK",
+        "ES",
+        "FI",
+        "FR",
+        "GB",
+        "IE",
+        "IN",
+        "IS",
+        "IT",
+        "JP",
+        "KR",
+        "MX",
+        "NL",
+        "NO",
+        "NZ",
+        "PL",
+        "PT",
+        "SE",
+        "SG",
+        "US",
+        "ZA"
+      ]
+    },
+    {
+      "id": 318,
+      "name": "WWE Network",
+      "type": "sub",
+      "regions": [
+        "US",
+        "GB"
+      ]
+    },
+    {
+      "id": 472,
+      "name": "Xumo Play",
+      "type": "free",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 344,
+      "name": "YouTube",
+      "type": "purchase",
+      "regions": [
+        "US",
+        "CA",
+        "GB",
+        "DE",
+        "AU",
+        "FR",
+        "PL",
+        "IN",
+        "PT",
+        "CH",
+        "AT"
+      ]
+    },
+    {
+      "id": 369,
+      "name": "Youtube Premium",
+      "type": "free",
+      "regions": [
+        "US",
+        "CA",
+        "GB",
+        "AU",
+        "ES",
+        "BE",
+        "DE",
+        "NZ",
+        "IT",
+        "FR",
+        "MX",
+        "AT",
+        "DK",
+        "FI",
+        "IE",
+        "NO",
+        "PT",
+        "SE",
+        "CH"
+      ]
+    },
+    {
+      "id": 469,
+      "name": "YouTube TV",
+      "type": "sub",
+      "regions": [
+        "US"
+      ]
+    },
+    {
+      "id": 552,
+      "name": "ZDF",
+      "type": "free",
+      "regions": [
+        "AT",
+        "CH",
+        "DE"
+      ]
+    },
+    {
+      "id": 646,
+      "name": "ZDF Krimi Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "AT",
+        "DE"
+      ]
+    },
+    {
+      "id": 623,
+      "name": "ZDF Select Amazon Channel",
+      "type": "sub",
+      "regions": [
+        "DE"
+      ]
+    },
+    {
+      "id": 450,
+      "name": "Zee5",
+      "type": "sub",
+      "regions": [
+        "IN",
+        "AE",
+        "AT",
+        "BG",
+        "CH",
+        "CL",
+        "CZ",
+        "DK",
+        "EC",
+        "EE",
+        "FI",
+        "GR",
+        "HK",
+        "HU",
+        "IE",
+        "IL",
+        "IS",
+        "LT",
+        "MY",
+        "NO",
+        "PA",
+        "PE",
+        "PH",
+        "PL",
+        "PT",
+        "RO",
+        "RS",
+        "SE",
+        "SG",
+        "TR",
+        "ZA",
+        "HR",
+        "ID",
+        "RU",
+        "TH",
+        "UA",
+        "VN",
+        "AU",
+        "AR",
+        "CO",
+        "FR",
+        "MX",
+        "IT",
+        "JP",
+        "KR",
+        "DE",
+        "NZ",
+        "BE",
+        "NL"
+      ]
+    }
+  ]
+}

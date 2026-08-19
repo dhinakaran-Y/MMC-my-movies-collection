@@ -35,6 +35,38 @@ export default function HomeGrid({
   useEffect(() => {
     const activeProvider = searchParams.get("provider") || "tmdb";
 
+    // ── Watchmode Client-Side Fallback ──
+    if (activeProvider === "watchmode") {
+      if (movieArr && movieArr.length > 0) {
+        setMovies(movieArr);
+        setTotalPages(displayTotalPages || 1);
+        return;
+      }
+
+      let isMounted = true;
+      setLoadingFallback(true);
+
+      const qs = new URLSearchParams(searchParams.toString());
+      fetch(`/api/watchmode/titles?${qs.toString()}`)
+        .then((res) => (res.ok ? res.json() : { results: [], total_pages: 1 }))
+        .then((data) => {
+          if (!isMounted) return;
+          setMovies(data.results || []);
+          setTotalPages(data.total_pages || 1);
+        })
+        .catch((err) => {
+          console.error("Watchmode client fallback error:", err);
+          if (isMounted) setMovies([]);
+        })
+        .finally(() => {
+          if (isMounted) setLoadingFallback(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+
     // ── TVmaze Client-Side Fallback ──
     if (activeProvider === "tvmaze") {
       // If SSR already provided movies, use them directly!
@@ -167,9 +199,11 @@ export default function HomeGrid({
   const typeLabel =
     activeProvider === "tvmaze"
       ? "TV shows"
-      : mediaType === "tv"
-        ? "TV shows"
-        : "movies";
+      : activeProvider === "watchmode"
+        ? "Watchmode titles"
+        : mediaType === "tv"
+          ? "TV shows"
+          : "movies";
 
   return (
     <main className="col-span-full lg:col-span-9 lg:h-full lg:overflow-y-auto p-8 custom-scrollbar">
@@ -179,7 +213,7 @@ export default function HomeGrid({
             <MovieCard
               key={`${activeProvider}-${movie.id}`}
               movie={movie}
-              mediaType={activeProvider === "tvmaze" ? "tv" : mediaType}
+              mediaType={activeProvider === "tvmaze" ? "tv" : (movie.mediaType || mediaType)}
               provider={activeProvider}
             />
           ))}

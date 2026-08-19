@@ -43,28 +43,31 @@ function reducer(state, action) {
 // --- Normalize media fields (movie vs TV) ---
 function getMediaInfo(item, mediaType, provider = "tmdb") {
   const isTvmaze = provider === "tvmaze";
+  const isWatchmode = provider === "watchmode";
   const resolvedMediaType = isTvmaze
     ? "tv"
-    : (item.media_type || (item.first_air_date && !item.release_date ? "tv" : (mediaType || "movie")));
+    : isWatchmode
+      ? (item.mediaType || item.tmdb_type || (item.type === "movie" ? "movie" : "tv"))
+      : (item.media_type || (item.first_air_date && !item.release_date ? "tv" : (mediaType || "movie")));
   const isTV = resolvedMediaType === "tv";
   return {
     id: item.id,
-    title: isTvmaze
+    title: isTvmaze || isWatchmode
       ? (item.title || item.name)
       : isTV
         ? (item.name || item.title)
         : (item.title || item.name),
-    releaseDate: isTvmaze
-      ? (item.first_air_date || item.release_date)
+    releaseDate: isTvmaze || isWatchmode
+      ? (item.release_date || item.first_air_date || (item.year ? `${item.year}` : null))
       : isTV
         ? item.first_air_date
         : item.release_date,
-    posterPath: item.poster_path,
+    posterPath: item.poster_path || item.posterSrc,
     overview: isTvmaze
       ? (item.overview || stripHtml(item._raw?.summary) || "")
       : (item.overview || ""),
     mediaType: resolvedMediaType,
-    // TVmaze extra info
+    // Rating & Score
     rating:
       typeof item.rating === "number"
         ? item.rating
@@ -73,6 +76,7 @@ function getMediaInfo(item, mediaType, provider = "tmdb") {
           : typeof item.vote_average === "number"
             ? item.vote_average
             : null,
+    criticScore: item.critic_score || item._raw?.critic_score || null,
     showType: item.showType || null,
     network: item.network || null,
     webChannel: item.webChannel || null,
@@ -80,9 +84,30 @@ function getMediaInfo(item, mediaType, provider = "tmdb") {
   };
 }
 
+const providersCache = new Map();
+
 // --- API Helpers ---
-async function fetchProviders(mediaId, mediaType = "movie", region = "IN", watchOption = "flatrate") {
+async function fetchProviders(mediaId, mediaType = "movie", region = "IN", watchOption = "flatrate", provider = "tmdb") {
   if (!mediaId) return [];
+  const cacheKey = `${provider}:${mediaType}:${mediaId}:${region}:${watchOption}`;
+  if (providersCache.has(cacheKey)) {
+    return providersCache.get(cacheKey);
+  }
+
+  if (provider === "watchmode") {
+    try {
+      const res = await fetch(
+        `/api/watchmode/title-sources?id=${mediaId}&region=${region}`,
+      );
+      if (!res.ok) return [];
+      const json = await res.json();
+      providersCache.set(cacheKey, json || []);
+      return json || [];
+    } catch {
+      return [];
+    }
+  }
+
   try {
     const type = mediaType === "tv" ? "tv" : "movie";
     const res = await fetch(
@@ -91,7 +116,9 @@ async function fetchProviders(mediaId, mediaType = "movie", region = "IN", watch
     if (!res.ok) return [];
     const json = await res.json();
     const regionData = json?.results?.[region];
-    return regionData ? regionData[watchOption] || [] : [];
+    const result = regionData ? regionData[watchOption] || [] : [];
+    providersCache.set(cacheKey, result);
+    return result;
   } catch {
     return [];
   }
@@ -118,17 +145,19 @@ export default function MovieCard({ movie, mediaType = "movie", provider = "tmdb
   const [state, dispatch] = useReducer(reducer, initialState);
   const [showDropdown, setShowDropdown] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [hasHovered, setHasHovered] = useState(false);
 
   const { user } = useAuth();
   const { openModal } = useCollectionModal();
   const searchParams = useSearchParams();
 
   const isTvmaze = provider === "tvmaze";
+  const isWatchmode = provider === "watchmode";
 
   // Resolve active region & watch option from URL params or user profile
   const activeRegion = searchParams.has("region")
-    ? (searchParams.get("region") || "IN")
-    : (user?.region || "IN");
+    ? (searchParams.get("region") || (isWatchmode ? "US" : "IN"))
+    : (user?.region || (isWatchmode ? "US" : "IN"));
   const activeWatchOption = searchParams.has("watchOption")
     ? (searchParams.get("watchOption") || "flatrate")
     : (user?.watchOption || "flatrate");
@@ -138,10 +167,12 @@ export default function MovieCard({ movie, mediaType = "movie", provider = "tmdb
 
   // Normalize media fields
   const media = getMediaInfo(movie, mediaType, provider);
-  // Composite ID for storage: "movie:550", "tv:1396", or "tvmaze:tv:169"
-  const compositeId = isTvmaze
-    ? `tvmaze:tv:${media.id}`
-    : `${media.mediaType}:${media.id}`;
+  // Composite ID for storage: "movie:550", "tv:1396", "tvmaze:tv:169", or "watchmode:tv:3257076"
+  const compositeId = isWatchmode
+    ? `watchmode:${media.mediaType}:${media.id}`
+    : isTvmaze
+      ? `tvmaze:tv:${media.id}`
+      : `${media.mediaType}:${media.id}`;
 
   useEffect(() => {
     userIdRef.current = user?._id;
@@ -153,15 +184,24 @@ export default function MovieCard({ movie, mediaType = "movie", provider = "tmdb
     setImageError(false);
   }, [movie.id]);
 
-  // 1. Fetch OTT Providers dynamically whenever region, watchOption, or movie changes
+  // 1. Fetch OTT Providers dynamically (for TMDB, on mount; for Watchmode, on hover/demand to prevent 429 rate limit)
   useEffect(() => {
     if (isTvmaze || !movie.id) {
       dispatch({ type: "SET_PROVIDERS", providers: [] });
       return;
     }
 
+    if (isWatchmode && !hasHovered) {
+      // Check if already cached
+      const cacheKey = `${provider}:${media.mediaType}:${movie.id}:${activeRegion}:${activeWatchOption}`;
+      if (providersCache.has(cacheKey)) {
+        dispatch({ type: "SET_PROVIDERS", providers: providersCache.get(cacheKey) });
+      }
+      return;
+    }
+
     let cancelled = false;
-    fetchProviders(movie.id, media.mediaType, activeRegion, activeWatchOption).then((providers) => {
+    fetchProviders(movie.id, media.mediaType, activeRegion, activeWatchOption, provider).then((providers) => {
       if (!cancelled) {
         dispatch({ type: "SET_PROVIDERS", providers });
       }
@@ -170,7 +210,7 @@ export default function MovieCard({ movie, mediaType = "movie", provider = "tmdb
     return () => {
       cancelled = true;
     };
-  }, [movie.id, media.mediaType, activeRegion, activeWatchOption, isTvmaze]);
+  }, [movie.id, media.mediaType, activeRegion, activeWatchOption, isTvmaze, isWatchmode, hasHovered, provider]);
 
   // 2. Fetch User Data (collections & watchedList)
   useEffect(() => {
@@ -195,7 +235,7 @@ export default function MovieCard({ movie, mediaType = "movie", provider = "tmdb
   async function reload() {
     const providerPromise = isTvmaze
       ? Promise.resolve([])
-      : fetchProviders(movieIdRef.current, media.mediaType, activeRegion, activeWatchOption);
+      : fetchProviders(movieIdRef.current, media.mediaType, activeRegion, activeWatchOption, provider);
 
     const [providers, userData] = await Promise.all([
       providerPromise,
@@ -285,15 +325,21 @@ export default function MovieCard({ movie, mediaType = "movie", provider = "tmdb
     }
   }
 
-  // Badge label: TVmaze shows the specific show type (Scripted, Animation, etc.)
+  // Badge label
   const badgeLabel = isTvmaze
     ? (media.showType || "TV Series")
-    : (mediaType === "tv" ? "TV Series" : "Movie");
+    : isWatchmode
+      ? (media.showType || (media.mediaType === "tv" ? "TV Series" : "Movie"))
+      : (mediaType === "tv" ? "TV Series" : "Movie");
 
-  const badgeIsTV = isTvmaze || mediaType === "tv";
+  const badgeIsTV = isTvmaze || mediaType === "tv" || media.mediaType === "tv";
 
   return (
-    <div className="group relative flex flex-col bg-dark-body2 rounded-xl overflow-hidden border border-white/5 shadow-lg">
+    <div
+      onMouseEnter={() => {
+        if (!hasHovered) setHasHovered(true);
+      }}
+      className="group relative flex flex-col bg-dark-body2 rounded-xl overflow-hidden border border-white/5 shadow-lg">
       {/* Media Type Badge */}
       <div className="absolute top-2.5 left-2.5 z-20 pointer-events-none flex flex-col gap-1.5">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-black/40 backdrop-blur-md border border-white/20 text-white/90 shadow-md">
@@ -308,14 +354,19 @@ export default function MovieCard({ movie, mediaType = "movie", provider = "tmdb
         </span>
       </div>
 
-      {/* TVmaze Rating Badge (top right) */}
-      {isTvmaze && typeof media.rating === "number" && (
-        <div className="absolute top-2.5 right-2.5 z-20 pointer-events-none">
-          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-yellow-500/90 backdrop-blur-md text-black shadow-md">
+      {/* Rating & Critic Score Badges (top right) */}
+      <div className="absolute top-2.5 right-2.5 z-20 pointer-events-none flex items-center gap-1">
+        {(isTvmaze || isWatchmode) && typeof media.rating === "number" && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-yellow-500/90 backdrop-blur-md text-black shadow-md">
             ⭐ {media.rating.toFixed ? media.rating.toFixed(1) : media.rating}
           </span>
-        </div>
-      )}
+        )}
+        {isWatchmode && typeof media.criticScore === "number" && (
+          <span className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/90 backdrop-blur-md text-black shadow-md">
+            🎯 {media.criticScore}%
+          </span>
+        )}
+      </div>
 
       {/* Image Container */}
       <div className="relative w-full aspect-2/3 h-90 sm:h-100 md:h-110 lg:h-120 overflow-hidden">
@@ -369,16 +420,27 @@ export default function MovieCard({ movie, mediaType = "movie", provider = "tmdb
               Available on:
             </p>
             <div className="flex gap-1.5 justify-center flex-wrap max-h-16 overflow-hidden">
-              {state.providers.slice(0, 4).map((p) => (
-                <Image
-                  key={p.provider_id}
-                  src={`https://media.themoviedb.org/t/p/original${p.logo_path}`}
-                  alt={p.provider_name}
-                  className="rounded-md border border-white/20 object-cover"
-                  width={30}
-                  height={30}
-                />
-              ))}
+              {state.providers.slice(0, 4).map((p, idx) =>
+                p.logo_path ? (
+                  <Image
+                    key={`ott-${p.provider_id || "p"}-${p.type || ""}-${idx}`}
+                    src={`https://media.themoviedb.org/t/p/original${p.logo_path}`}
+                    alt={p.provider_name}
+                    className="rounded-md border border-white/20 object-cover"
+                    width={30}
+                    height={30}
+                  />
+                ) : (
+                  <a
+                    key={`ott-${p.provider_id || "p"}-${p.type || ""}-${idx}`}
+                    href={p.web_url || "#"}
+                    target={p.web_url ? "_blank" : undefined}
+                    rel="noopener noreferrer"
+                    className="px-2 py-1 rounded bg-white/10 hover:bg-white/20 border border-white/15 text-[10px] font-semibold text-cyan-300 transition-colors truncate max-w-28">
+                    {p.provider_name}
+                  </a>
+                ),
+              )}
             </div>
           </div>
         )}

@@ -10,6 +10,11 @@ import {
   getShowTypes as tvmazeShowTypes,
   getCountries as tvmazeCountries,
 } from "@/lib/providers/tvmazeAdapter";
+import {
+  browseMedia as watchmodeBrowse,
+  searchMedia as watchmodeSearch,
+  getGenres as watchmodeGenres,
+} from "@/lib/providers/watchmodeAdapter";
 
 const API_KEY = process.env.TMDB_API_KEY;
 const BASE_URL = "https://api.themoviedb.org/3";
@@ -147,11 +152,70 @@ async function getTvmazeData(params) {
   });
 }
 
+/* ── Watchmode SSR data fetch ── */
+async function getWatchmodeData(params) {
+  const query = params.query || "";
+  const page = Number(params.page) || 1;
+
+  if (query) {
+    return await watchmodeSearch(query, page);
+  }
+
+  return await watchmodeBrowse({
+    page,
+    region: params.region || "US",
+    wmType: params.wmType || "",
+    serviceTypes: params.serviceTypes || "",
+    sourceIds: params.sourceIds || "",
+    genre: params.genre || "",
+    yearStart: params.yearStart || "",
+    yearEnd: params.yearEnd || "",
+    ratingLow: params.ratingLow || "",
+    ratingHigh: params.ratingHigh || "",
+    criticLow: params.criticLow || "",
+    criticHigh: params.criticHigh || "",
+    lang: params.lang || "",
+    sortBy: params.sortBy || "popularity_desc",
+  });
+}
+
 export default async function Home({ searchParams }) {
   const params = await searchParams;
 
   const provider = params.provider || "tmdb";
   const currentPage = Number(params.page) || 1;
+
+  // ── Watchmode Provider ──
+  if (provider === "watchmode") {
+    const [watchmodeData, genresArr] = await Promise.all([
+      getWatchmodeData(params),
+      watchmodeGenres(),
+    ]);
+
+    const movieArr = watchmodeData.results || [];
+    const displayTotalPages = watchmodeData.total_pages || 1;
+
+    return (
+      <div className="lg:h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
+        <AsideFilter
+          genresArr={genresArr}
+          currentLang={params.lang || ""}
+          currentGenre={params.genre || ""}
+          currentQuery={params.query || ""}
+          currentType={params.wmType === "movie" ? "movie" : "tv"}
+          provider="watchmode"
+        />
+
+        <HomeGrid
+          movieArr={movieArr}
+          currentPage={currentPage}
+          displayTotalPages={displayTotalPages}
+          mediaType={params.wmType === "movie" ? "movie" : "tv"}
+          provider="watchmode"
+        />
+      </div>
+    );
+  }
 
   // ── TVmaze Provider ──
   if (provider === "tvmaze") {

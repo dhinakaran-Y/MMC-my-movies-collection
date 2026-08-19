@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <rect width="120" height="120" rx="24" fill="#1F2937"/>
+  <rect x="6" y="6" width="108" height="108" rx="18" fill="#111827" stroke="#F5C518" stroke-width="4"/>
+  <text x="60" y="68" fill="#F5C518" font-family="monospace, ui-monospace, sans-serif" font-weight="900" font-size="30" text-anchor="middle" letter-spacing="1">OMDb</text>
+  <circle cx="28" cy="88" r="4" fill="#E50914"/>
+  <circle cx="60" cy="88" r="4" fill="#E50914"/>
+  <circle cx="92" cy="88" r="4" fill="#E50914"/>
+</svg>

@@ -24,31 +24,51 @@ function reducer(state, action) {
         myCollections: action.collections,
         watchedList: action.watchedList,
       };
+    case "SET_PROVIDERS":
+      return {
+        ...state,
+        providers: action.providers,
+      };
+    case "SET_USER_DATA":
+      return {
+        ...state,
+        myCollections: action.collections,
+        watchedList: action.watchedList,
+      };
     default:
       return state;
   }
 }
 
-async function fetchMovieData(userId, movieId, mediaType = "movie", region = "IN", watchOption = "flatrate") {
+async function fetchProviders(mediaId, mediaType = "movie", region = "IN", watchOption = "flatrate") {
+  if (!mediaId) return [];
   try {
     const type = mediaType === "tv" ? "tv" : "movie";
-    const [provRes, colRes, watchRes] = await Promise.all([
-      fetch(
-        `https://api.themoviedb.org/3/${type}/${movieId}/watch/providers?api_key=${API_KEY}`,
-      ),
+    const res = await fetch(
+      `https://api.themoviedb.org/3/${type}/${mediaId}/watch/providers?api_key=${API_KEY}`,
+    );
+    if (!res.ok) return [];
+    const json = await res.json();
+    const regionData = json?.results?.[region];
+    return regionData ? regionData[watchOption] || [] : [];
+  } catch {
+    return [];
+  }
+}
+
+async function fetchUserData(userId) {
+  if (!userId) return { collections: [], watchedList: [] };
+  try {
+    const [colRes, watchRes] = await Promise.all([
       fetch(`/api/get-collections/${userId}`, { credentials: "include" }),
       fetch(`/api/watch-list/${userId}`, { credentials: "include" }),
     ]);
-
-    const provJson = provRes.ok ? await provRes.json() : {};
-    const regionData = provJson?.results?.[region];
     return {
-      providers: regionData ? regionData[watchOption] || [] : [],
       collections: colRes.ok ? (await colRes.json()).collections || [] : [],
       watchedList: watchRes.ok ? (await watchRes.json()).movies || [] : [],
     };
   } catch {
-    return { collections: [], watchedList: [], providers: [] };
+    return { collections: [], watchedList: [] };
   }
 }
 
@@ -57,10 +77,11 @@ export default function CollectionMovieCard({ movie, collectionId }) {
   const [showDropdown, setShowDropdown] = useState(false);
 
   const isCustom = movie.isCustom || (typeof movie.storedId === "string" && movie.storedId.startsWith("custom:"));
-  const mediaType = movie.mediaType || (movie.first_air_date ? "tv" : "movie");
+  const isTvmaze = movie.provider === "tvmaze" || (typeof movie.storedId === "string" && movie.storedId.startsWith("tvmaze:"));
+  const mediaType = isTvmaze ? "tv" : (movie.mediaType || movie.media_type || (movie.first_air_date && !movie.release_date ? "tv" : "movie"));
   const mediaTitle = movie.title || movie.name || "Untitled";
   const rawId = movie.id?.toString();
-  const compositeId = movie.storedId || `${mediaType}:${rawId}`;
+  const compositeId = movie.storedId || (isTvmaze ? `tvmaze:tv:${rawId}` : `${mediaType}:${rawId}`);
 
   let initialPoster = "/fallbackImg.png";
   if (movie.poster_path) {
@@ -96,43 +117,58 @@ export default function CollectionMovieCard({ movie, collectionId }) {
     setPoster(initialPoster);
   }, [user?._id, movie.id, initialPoster]);
 
+  // 1. Fetch OTT Providers dynamically whenever region, watchOption, or movie changes (independent of user auth)
   useEffect(() => {
-    if (!user?._id) return;
-    let cancelled = false;
-    // For custom movies, skip TMDB watch providers but fetch user data
-    if (isCustom) {
-      fetch(`/api/get-collections/${user._id}`, { credentials: "include" })
-        .then((res) => (res.ok ? res.json() : { collections: [] }))
-        .then((colData) => {
-          fetch(`/api/watch-list/${user._id}`, { credentials: "include" })
-            .then((wRes) => (wRes.ok ? wRes.json() : { movies: [] }))
-            .then((wData) => {
-              if (cancelled) return;
-              dispatch({
-                type: "SET_ALL",
-                providers: [],
-                collections: colData.collections || [],
-                watchedList: wData.movies || [],
-              });
-            });
-        });
-      return () => {
-        cancelled = true;
-      };
+    if (isCustom || isTvmaze || !movie.id) {
+      dispatch({ type: "SET_PROVIDERS", providers: [] });
+      return;
     }
 
-    fetchMovieData(user._id, movie.id, mediaType, activeRegion, activeWatchOption).then((data) => {
-      if (cancelled) return;
-      dispatch({ type: "SET_ALL", ...data });
+    let cancelled = false;
+    fetchProviders(movie.id, mediaType, activeRegion, activeWatchOption).then((providers) => {
+      if (!cancelled) {
+        dispatch({ type: "SET_PROVIDERS", providers });
+      }
     });
+
     return () => {
       cancelled = true;
     };
-  }, [movie.id, user?._id, mediaType, isCustom, activeRegion, activeWatchOption]);
+  }, [movie.id, mediaType, activeRegion, activeWatchOption, isCustom, isTvmaze]);
+
+  // 2. Fetch User Data (collections & watchedList)
+  useEffect(() => {
+    if (!user?._id) return;
+    let cancelled = false;
+
+    fetchUserData(user._id).then((userData) => {
+      if (!cancelled) {
+        dispatch({
+          type: "SET_USER_DATA",
+          collections: userData.collections,
+          watchedList: userData.watchedList,
+        });
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?._id]);
 
   async function reload() {
-    const data = await fetchMovieData(userIdRef.current, movieIdRef.current, mediaType, activeRegion, activeWatchOption);
-    dispatch({ type: "SET_ALL", ...data });
+    const [providers, userData] = await Promise.all([
+      (isCustom || isTvmaze)
+        ? Promise.resolve([])
+        : fetchProviders(movieIdRef.current, mediaType, activeRegion, activeWatchOption),
+      fetchUserData(userIdRef.current),
+    ]);
+    dispatch({
+      type: "SET_ALL",
+      providers,
+      collections: userData.collections,
+      watchedList: userData.watchedList,
+    });
   }
 
   const checkIsWatched = () => {
@@ -152,6 +188,21 @@ export default function CollectionMovieCard({ movie, collectionId }) {
       list.includes(`movie:${rawId}`) ||
       list.includes(`tv:${rawId}`)
     );
+  };
+
+  const handleCollectionSubmit = async (formData) => {
+    if (!user?._id) return;
+    const res = await fetch(`/api/collection`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({
+        ownerId: user._id,
+        collectionName: formData.collectionName,
+        visibility: formData.visibility,
+      }),
+    });
+    if (res.ok) await reload();
   };
 
   const handleToggleWatched = async () => {
@@ -260,13 +311,20 @@ export default function CollectionMovieCard({ movie, collectionId }) {
             className={`w-1.5 h-1.5 rounded-full ${
               isCustom
                 ? "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]"
-                : mediaType === "tv"
+                : isTvmaze || mediaType === "tv"
                   ? "bg-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.8)]"
                   : "bg-brand shadow-[0_0_6px_rgba(229,9,20,0.8)]"
             }`}
           />
-          {isCustom ? "Custom" : mediaType === "tv" ? "TV Series" : "Movie"}
+          {isCustom ? "Custom" : isTvmaze ? (movie.showType || "TV Series") : mediaType === "tv" ? "TV Series" : "Movie"}
         </span>
+
+        {/* TVmaze Rating Badge */}
+        {isTvmaze && typeof movie.rating === "number" && (
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-bold bg-yellow-500/90 backdrop-blur-md text-black shadow-md">
+            ⭐ {movie.rating.toFixed ? movie.rating.toFixed(1) : movie.rating}
+          </span>
+        )}
 
         {/* Custom Edit / Delete Actions */}
         {isCustom && user && (
@@ -327,33 +385,33 @@ export default function CollectionMovieCard({ movie, collectionId }) {
 
       {/* Info & Actions Div */}
       <div
-        className="p-4 pt-14 flex flex-col items-center justify-between bg-dark-body2 
-                      lg:absolute lg:inset-0 lg:bg-black/90 lg:opacity-0 lg:group-hover:opacity-100 lg:z-10 transition-opacity duration-300">
-        <div className="w-full flex flex-col items-center my-auto">
-          <h1 className="w-full px-2 text-orange-500 font-bold text-center text-lg lg:text-2xl font-mono mb-2 capitalize break-words line-clamp-2">
+        className="p-4 pt-12 flex flex-col items-center justify-between bg-dark-body2 
+                      lg:absolute lg:inset-0 lg:bg-black/90 lg:opacity-0 lg:group-hover:opacity-100 lg:z-10 transition-opacity duration-300 overflow-hidden">
+        <div className="w-full flex flex-col items-center my-auto min-h-0">
+          <h1 className="w-full px-2 text-orange-500 font-bold text-center text-base lg:text-xl font-mono mb-1.5 capitalize break-words line-clamp-2">
             {mediaTitle}
           </h1>
 
-          <p className="hidden lg:block w-[90%] line-clamp-3 text-xs text-white/70 mb-4 text-center">
+          <p className="hidden lg:line-clamp-3 text-xs text-white/70 mb-2 text-center w-[92%] leading-relaxed">
             {movie.overview}
           </p>
         </div>
 
         {/* OTT Platforms */}
         {state.providers.length > 0 && (
-          <div className="text-center mb-4">
-            <p className="text-white text-[10px] uppercase tracking-wider mb-2">
+          <div className="text-center mb-3 shrink-0">
+            <p className="text-white text-[10px] uppercase tracking-wider mb-1.5">
               Available on:
             </p>
-            <div className="flex gap-2 justify-center flex-wrap">
-              {state.providers.map((p) => (
+            <div className="flex gap-1.5 justify-center flex-wrap max-h-16 overflow-hidden">
+              {state.providers.slice(0, 4).map((p) => (
                 <Image
                   key={p.provider_id}
                   src={`https://media.themoviedb.org/t/p/original${p.logo_path}`}
                   alt={p.provider_name}
-                  className="rounded-md border border-white/20"
-                  width={25}
-                  height={25}
+                  className="rounded-md border border-white/20 object-cover"
+                  width={30}
+                  height={30}
                 />
               ))}
             </div>
@@ -362,30 +420,28 @@ export default function CollectionMovieCard({ movie, collectionId }) {
 
         {/* Action Buttons */}
         {user && (
-          <div className="w-full grid grid-cols-2 gap-2 mt-auto">
+          <div className="w-full grid grid-cols-2 gap-2 mt-auto shrink-0 pt-1">
             <button
               onClick={handleToggleWatched}
-              className={`${isWatched ? "bg-green-600/80" : "bg-red-600/80"} rounded py-2 text-xs font-semibold text-white`}>
+              className={`${isWatched ? "bg-green-600/80 hover:bg-green-600" : "bg-red-600/80 hover:bg-red-600"} rounded py-2 text-xs font-semibold text-white transition-colors`}>
               {isWatched ? "Watched ✓" : "Watch"}
             </button>
 
             <div className="relative">
               <button
                 onClick={() => setShowDropdown(!showDropdown)}
-                className="w-full bg-blue-600/80 rounded py-2 text-xs font-semibold text-white">
+                className="w-full bg-blue-600/80 hover:bg-blue-600 rounded py-2 text-xs font-semibold text-white transition-colors">
                 {showDropdown ? "Close" : "+ Collection"}
               </button>
 
               {showDropdown && (
-                <div className="absolute bottom-full mb-2 right-0 w-40 bg-dark-body2 border border-white/10 rounded-xl shadow-2xl p-2 z-50">
+                <div className="absolute bottom-full mb-2 right-0 w-44 max-h-48 overflow-y-auto bg-dark-body2 border border-white/10 rounded-xl shadow-2xl p-2 z-50">
                   <button
                     onClick={() => {
                       setShowDropdown(false);
-                      openModal(null, (formData) => {
-                        /* handle submit */
-                      });
+                      openModal(null, handleCollectionSubmit);
                     }}
-                    className="w-full text-left px-3 py-2 text-brand font-bold text-xs border-b border-white/10 mb-1">
+                    className="w-full text-left px-3 py-2 text-brand font-bold text-xs border-b border-white/10 mb-1 hover:bg-brand/10 rounded transition-colors">
                     + Create New
                   </button>
                   {state.myCollections.map((col) => {
@@ -394,8 +450,8 @@ export default function CollectionMovieCard({ movie, collectionId }) {
                       <button
                         key={col._id}
                         onClick={() => handleToggleCollection(col)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-xs ${isAdded ? "text-yellow-500 font-semibold" : "text-white"}`}>
-                        {col.collectionName}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors hover:bg-white/5 ${isAdded ? "text-yellow-500 font-semibold" : "text-white"}`}>
+                        <span className="truncate inline-block max-w-[85%] align-middle">{col.collectionName}</span>
                         {isAdded && <span className="float-right">✓</span>}
                       </button>
                     );

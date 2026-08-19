@@ -6,11 +6,16 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import MovieCard from "./MovieCard";
 import Pagination from "./Pagination";
-
 const API_KEY = "3472ccb0d97ebc192cbd0e56bd799736";
 const BASE_URL = "https://api.themoviedb.org/3";
 
-export default function HomeGrid({ movieArr, currentPage, displayTotalPages, mediaType = "movie" }) {
+export default function HomeGrid({
+  movieArr,
+  currentPage,
+  displayTotalPages,
+  mediaType = "movie",
+  provider = "tmdb",
+}) {
   const { user } = useAuth();
   const { openModal } = useCollectionModal();
   const searchParams = useSearchParams();
@@ -28,6 +33,42 @@ export default function HomeGrid({ movieArr, currentPage, displayTotalPages, med
   // Client-side fallback: if server-side fetch returned generic movies, but logged-in user has a preferred language,
   // fetch preferred language movies directly in browser!
   useEffect(() => {
+    const activeProvider = searchParams.get("provider") || "tmdb";
+
+    // ── TVmaze Client-Side Fallback ──
+    if (activeProvider === "tvmaze") {
+      // If SSR already provided movies, use them directly!
+      if (movieArr && movieArr.length > 0) {
+        setMovies(movieArr);
+        setTotalPages(displayTotalPages || 1);
+        return;
+      }
+
+      let isMounted = true;
+      setLoadingFallback(true);
+
+      const qs = new URLSearchParams(searchParams.toString());
+      fetch(`/api/tvmaze/shows?${qs.toString()}`)
+        .then((res) => (res.ok ? res.json() : { results: [], total_pages: 1 }))
+        .then((data) => {
+          if (!isMounted) return;
+          setMovies(data.results || []);
+          setTotalPages(data.total_pages || 1);
+        })
+        .catch((err) => {
+          console.error("TVmaze client fallback error:", err);
+          if (isMounted) setMovies([]);
+        })
+        .finally(() => {
+          if (isMounted) setLoadingFallback(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+
+    // ── TMDB Client-Side Fallback (unchanged) ──
     const hasLangParam = searchParams.has("lang");
     const preferredLang = user?.language || "";
 
@@ -120,16 +161,27 @@ export default function HomeGrid({ movieArr, currentPage, displayTotalPages, med
     return () => {
       isMounted = false;
     };
-  }, [movieArr, searchParams, user?.language, mediaType]);
+  }, [movieArr, searchParams, user?.language, mediaType, provider]);
 
-  const typeLabel = mediaType === "tv" ? "TV shows" : "movies";
+  const activeProvider = searchParams.get("provider") || "tmdb";
+  const typeLabel =
+    activeProvider === "tvmaze"
+      ? "TV shows"
+      : mediaType === "tv"
+        ? "TV shows"
+        : "movies";
 
   return (
     <main className="col-span-full lg:col-span-9 lg:h-full lg:overflow-y-auto p-8 custom-scrollbar">
       {movies.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
           {movies.map((movie) => (
-            <MovieCard key={movie.id} movie={movie} mediaType={mediaType} />
+            <MovieCard
+              key={`${activeProvider}-${movie.id}`}
+              movie={movie}
+              mediaType={activeProvider === "tvmaze" ? "tv" : mediaType}
+              provider={activeProvider}
+            />
           ))}
         </div>
       ) : loadingFallback ? (

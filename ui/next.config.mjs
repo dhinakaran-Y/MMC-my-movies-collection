@@ -30,6 +30,12 @@ const nextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "static.tvmaze.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
   async rewrites() {

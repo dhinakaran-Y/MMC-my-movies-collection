@@ -65,13 +65,13 @@ export async function loginUser(req, res) {
     const token = jwt.sign(
       { id: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: "1h" },
+      { expiresIn: "30d" },
     );
 
     // Cookie settings: secure for production (HTTPS), insecure for development (HTTP)
     const cookieOptions = {
       httpOnly: true,
-      maxAge: 60 * 60 * 1000,
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
       path: "/",
     };
 

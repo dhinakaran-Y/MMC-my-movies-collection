@@ -24,13 +24,19 @@ export async function generateMetadata() {
   };
 }
 
-// ── Fetch single media (movie or tv) details from TMDB ─────────────────────
+// ── Fetch single media (movie or tv) details ─────────────────────
 async function getMediaDetails(storedId) {
   try {
     let type = "movie";
     let id = storedId;
     if (typeof storedId === "string" && storedId.includes(":")) {
-      [type, id] = storedId.split(":");
+      const parts = storedId.split(":");
+      if (parts[0] === "tvmaze") {
+        type = "tvmaze";
+        id = parts[2] || parts[1];
+      } else {
+        [type, id] = parts;
+      }
     }
 
     // Handle Custom Movie
@@ -50,6 +56,32 @@ async function getMediaDetails(storedId) {
         overview: custom.overview,
         mediaType: custom.mediaType || "movie",
         isCustom: true,
+      };
+    }
+
+    // Handle TVmaze Show
+    if (type === "tvmaze") {
+      const res = await fetch(`https://api.tvmaze.com/shows/${id}`, {
+        next: { revalidate: 86400 },
+      });
+      if (!res.ok) return null;
+      const show = await res.json();
+      const summaryClean = show.summary
+        ? show.summary.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim()
+        : "";
+      return {
+        id: show.id,
+        storedId: `tvmaze:tv:${show.id}`,
+        title: show.name,
+        name: show.name,
+        poster_path: show.image?.medium || show.image?.original || null,
+        posterSrc: show.image?.medium || show.image?.original || "/fallbackImg.png",
+        overview: summaryClean,
+        mediaType: "tv",
+        provider: "tvmaze",
+        rating: show.rating?.average || null,
+        showType: show.type || null,
+        first_air_date: show.premiered || null,
       };
     }
 

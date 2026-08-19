@@ -1,9 +1,15 @@
+export const dynamic = "force-dynamic";
+
 import AsideFilter from "@/components/AsideFilter";
-import CollectionCreateForm from "@/components/CollectionComponents/CollectionCreateForm";
 import HomeGrid from "@/components/HomeGrid";
-import MovieCard from "@/components/MovieCard";
-import Pagination from "@/components/Pagination";
-import LanguageRegionMappedData from "@/data/LanguageRegionMappedData.json";
+import {
+  getShows as tvmazeGetShows,
+  getGenres as tvmazeGenres,
+  getLanguages as tvmazeLanguages,
+  getShowStatuses as tvmazeStatuses,
+  getShowTypes as tvmazeShowTypes,
+  getCountries as tvmazeCountries,
+} from "@/lib/providers/tvmazeAdapter";
 
 const API_KEY = process.env.TMDB_API_KEY;
 const BASE_URL = "https://api.themoviedb.org/3";
@@ -21,13 +27,7 @@ async function fetchWithRetry(url, options = {}, retries = 5, delayMs = 500) {
   }
 }
 
-/* getMedia Fn — supports both "movie" and "tv" media types
- * 1. search query
- * 2. genre filtering
- * 3. language
- * 4. top rated
- * 5. media type (movie | tv)
- */
+/* ── TMDB getMedia (unchanged logic) ── */
 async function getMedia(
   page = 1,
   topRated = false,
@@ -38,74 +38,47 @@ async function getMedia(
 ) {
   const today = new Date().toISOString().split("T")[0];
   const isTV = type === "tv";
-  // Release types (movies only): 1=Premiere, 2=Theatrical (limited), 3=Theatrical, 4=Digital, 5=Physical, 6=TV
   const officialReleaseTypes = "1|2|3|4|5|6";
-  // Date field differs: movies use release_date, TV uses first_air_date
   const dateField = isTV ? "first_air_date" : "release_date";
   let url = "";
   let isSearch = false;
 
-  // 1. Search
   if (query) {
     const searchType = isTV ? "tv" : "movie";
     url = `${BASE_URL}/search/${searchType}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
     isSearch = true;
-  }
-
-  // 2. Top Rated (Global - no other filters applied)
-  else if (topRated && !lang && !genre) {
+  } else if (topRated && !lang && !genre) {
     const discoverType = isTV ? "tv" : "movie";
     url = `${BASE_URL}/discover/${discoverType}?api_key=${API_KEY}&page=${page}`;
     url += `&sort_by=vote_average.desc&vote_count.gte=${isTV ? 100 : 150}`;
     url += `&${dateField}.lte=${today}`;
-    // with_release_type only works for movies
     if (!isTV) {
       url += `&with_release_type=${encodeURIComponent(officialReleaseTypes)}`;
     }
-  }
-
-  // 3. Discover - Filter
-  else {
+  } else {
     const discoverType = isTV ? "tv" : "movie";
     url = `${BASE_URL}/discover/${discoverType}?api_key=${API_KEY}&page=${page}`;
-
-    // genre
-    if (genre) {
-      url += `&with_genres=${genre}`;
-    }
-
-    // language
-    if (lang) {
-      url += `&with_original_language=${lang}`;
-    }
-
-    // Restrict to already-aired/released content
+    if (genre) url += `&with_genres=${genre}`;
+    if (lang) url += `&with_original_language=${lang}`;
     url += `&${dateField}.lte=${today}`;
-    // with_release_type only works for movies
     if (!isTV) {
       url += `&with_release_type=${encodeURIComponent(officialReleaseTypes)}`;
     }
-
-    // sorting
     if (topRated) {
       const minVotes = lang ? 5 : (isTV ? 100 : 150);
       url += `&sort_by=vote_average.desc&vote_count.gte=${minVotes}`;
     } else if (lang) {
       url += `&sort_by=popularity.desc`;
     } else {
-      // Default discovery — sort by most recent
       url += `&sort_by=${dateField}.desc`;
     }
   }
-
-  // console.log("URL:", url);
 
   try {
     const res = await fetchWithRetry(url, { next: { revalidate: 3600 } });
     if (!res.ok) return { results: [], total_pages: 0 };
     const data = await res.json();
 
-    // For search results, filter out placeholder/unauthorized entries
     if (isSearch && data.results) {
       data.results = data.results.filter((item) => {
         const hasBasicInfo = item.poster_path && item.overview;
@@ -126,9 +99,7 @@ async function getLanguages() {
   try {
     const res = await fetchWithRetry(
       `${BASE_URL}/configuration/languages?api_key=${API_KEY}`,
-      {
-        next: { revalidate: 86400 },
-      },
+      { next: { revalidate: 86400 } },
     );
     if (!res.ok) return [];
     const data = await res.json();
@@ -143,9 +114,7 @@ async function getGenres(type = "movie") {
     const genreType = type === "tv" ? "tv" : "movie";
     const res = await fetchWithRetry(
       `${BASE_URL}/genre/${genreType}/list?api_key=${API_KEY}`,
-      {
-        next: { revalidate: 86400 },
-      },
+      { next: { revalidate: 86400 } },
     );
     if (!res.ok) return [];
     const data = await res.json();
@@ -155,18 +124,73 @@ async function getGenres(type = "movie") {
   }
 }
 
+/* ── TVmaze SSR data fetch ── */
+async function getTvmazeData(params) {
+  const page = Number(params.page) || 1;
+  const query = params.query || "";
+  const genres = params.genre ? params.genre.split(",") : [];
+  const language = params.lang && params.lang !== "all" ? params.lang : "";
+  const status = params.showStatus || "";
+  const showType = params.showType || "";
+  const country = params.country || "";
+  const sortBy = params.sortBy || "popularity";
+
+  return await tvmazeGetShows({
+    page,
+    query,
+    genres,
+    language,
+    status,
+    showType,
+    country,
+    sortBy,
+  });
+}
+
 export default async function Home({ searchParams }) {
-  // Await searchParams for Next.js 15+
   const params = await searchParams;
 
+  const provider = params.provider || "tmdb";
   const currentPage = Number(params.page) || 1;
+
+  // ── TVmaze Provider ──
+  if (provider === "tvmaze") {
+    const tvmazeData = await getTvmazeData(params);
+    const movieArr = tvmazeData.results || [];
+    const displayTotalPages = tvmazeData.total_pages || 1;
+
+    // Build genre list for sidebar (TVmaze: string-based, no IDs)
+    const genresArr = tvmazeGenres().map((name) => ({ id: name, name }));
+
+    return (
+      <div className="lg:h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
+        <AsideFilter
+          genresArr={genresArr}
+          currentLang={params.lang || ""}
+          currentGenre={params.genre || ""}
+          currentQuery={params.query || ""}
+          currentType="tv"
+          provider="tvmaze"
+        />
+
+        <HomeGrid
+          movieArr={movieArr}
+          currentPage={currentPage}
+          displayTotalPages={displayTotalPages}
+          mediaType="tv"
+          provider="tvmaze"
+        />
+      </div>
+    );
+  }
+
+  // ── TMDB Provider (default — unchanged logic) ──
   const isTopRated = params.topRated === "true";
   const language = params.lang === "all" ? "" : (params.lang || "");
   const query = params.query || "";
   const genre = params.genre || "";
   const mediaType = params.type === "tv" ? "tv" : "movie";
 
-  // Fetch all secondary data and main media data in parallel
   const [mediaData, languagesArr, genresArr] = await Promise.all([
     getMedia(currentPage, isTopRated, language, query, genre, mediaType),
     getLanguages(),
@@ -180,13 +204,13 @@ export default async function Home({ searchParams }) {
 
   return (
     <div className="lg:h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
-      {/* Sidebar - Pass query, lang, genres, and media type to manage UI states */}
       <AsideFilter
         genresArr={genresArr}
         currentLang={language}
         currentGenre={genre}
         currentQuery={query}
         currentType={mediaType}
+        provider="tmdb"
       />
 
       <HomeGrid
@@ -194,6 +218,7 @@ export default async function Home({ searchParams }) {
         currentPage={currentPage}
         displayTotalPages={displayTotalPages}
         mediaType={mediaType}
+        provider="tmdb"
       />
     </div>
   );

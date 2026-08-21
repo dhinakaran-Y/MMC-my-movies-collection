@@ -36,10 +36,42 @@ const nextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "s4.anilist.co",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "anilist.co",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "m.media-amazon.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "ia.media-imdb.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
   async rewrites() {
     return {
+      // Ensure Next.js API routes are NOT proxied to the Express backend
+      beforeFiles: [
+        { source: "/api/omdb/:path*", destination: "/api/omdb/:path*" },
+        { source: "/api/tmdb/:path*", destination: "/api/tmdb/:path*" },
+        { source: "/api/anilist/:path*", destination: "/api/anilist/:path*" },
+        { source: "/api/tvmaze/:path*", destination: "/api/tvmaze/:path*" },
+        { source: "/api/watchmode/:path*", destination: "/api/watchmode/:path*" },
+      ],
       afterFiles: [
         {
           source: "/api/:path*",

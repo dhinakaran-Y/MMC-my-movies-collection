@@ -370,3 +370,21 @@ export const getServiceTypes = () => watchmodeEnums.serviceTypes;
 export const getSortOptions = () => watchmodeEnums.sortOptions;
 export const getRegions = () => watchmodeEnums.regions;
 export const getTopSources = () => watchmodeEnums.topStreamingSources;
+
+/**
+ * Fetch a single title details by Watchmode title ID
+ */
+export async function getTitleDetails(titleId) {
+  if (!titleId) return null;
+  try {
+    const url = `${BASE_URL}/title/${titleId}/details/?apiKey=${API_KEY}`;
+    const res = await fetch(url, { next: { revalidate: 86400 } });
+    if (!res.ok) return null;
+    const item = await res.json();
+    const [enriched] = await batchEnrichWithTmdb([item]);
+    return normalizeMedia(enriched);
+  } catch (error) {
+    console.error("Watchmode getTitleDetails error:", error);
+    return null;
+  }
+}

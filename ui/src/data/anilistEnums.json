@@ -1,0 +1,100 @@
+{
+  "mediaTypes": [
+    { "value": "ANIME", "label": "Anime" },
+    { "value": "MANGA", "label": "Manga" }
+  ],
+  "animeCategories": [
+    { "value": "trending", "label": "Trending Now" },
+    { "value": "this_season", "label": "Popular This Season" },
+    { "value": "next_season", "label": "Upcoming Next Season" },
+    { "value": "all_time_popular", "label": "All Time Popular" },
+    { "value": "top_100", "label": "Top 100 Anime" }
+  ],
+  "mangaCategories": [
+    { "value": "trending", "label": "Trending Now" },
+    { "value": "this_season", "label": "Highest Rated Manga" },
+    { "value": "next_season", "label": "Popular Publishing" },
+    { "value": "all_time_popular", "label": "All Time Popular" },
+    { "value": "top_100", "label": "Top 100 Manga" }
+  ],
+  "animeFormats": [
+    { "value": "TV", "label": "TV Show" },
+    { "value": "TV_SHORT", "label": "TV Short" },
+    { "value": "MOVIE", "label": "Movie" },
+    { "value": "SPECIAL", "label": "Special" },
+    { "value": "OVA", "label": "OVA" },
+    { "value": "ONA", "label": "ONA" },
+    { "value": "MUSIC", "label": "Music" }
+  ],
+  "mangaFormats": [
+    { "value": "MANGA", "label": "Manga" },
+    { "value": "NOVEL", "label": "Light Novel" },
+    { "value": "ONE_SHOT", "label": "One Shot" }
+  ],
+  "airingStatuses": [
+    { "value": "RELEASING", "label": "Airing" },
+    { "value": "FINISHED", "label": "Finished" },
+    { "value": "NOT_YET_RELEASED", "label": "Not Yet Aired" },
+    { "value": "CANCELLED", "label": "Cancelled" },
+    { "value": "HIATUS", "label": "Hiatus" }
+  ],
+  "publishingStatuses": [
+    { "value": "RELEASING", "label": "Publishing" },
+    { "value": "FINISHED", "label": "Finished" },
+    { "value": "NOT_YET_RELEASED", "label": "Not Yet Published" },
+    { "value": "CANCELLED", "label": "Cancelled" },
+    { "value": "HIATUS", "label": "Hiatus" }
+  ],
+  "seasons": [
+    { "value": "WINTER", "label": "Winter" },
+    { "value": "SPRING", "label": "Spring" },
+    { "value": "SUMMER", "label": "Summer" },
+    { "value": "FALL", "label": "Fall" }
+  ],
+  "sources": [
+    { "value": "ORIGINAL", "label": "Original" },
+    { "value": "MANGA", "label": "Manga" },
+    { "value": "LIGHT_NOVEL", "label": "Light Novel" },
+    { "value": "VISUAL_NOVEL", "label": "Visual Novel" },
+    { "value": "VIDEO_GAME", "label": "Video Game" },
+    { "value": "NOVEL", "label": "Novel" },
+    { "value": "DOUJINSHI", "label": "Doujinshi" },
+    { "value": "ANIME", "label": "Anime" },
+    { "value": "WEB_NOVEL", "label": "Web Novel" },
+    { "value": "LIVE_ACTION", "label": "Live Action" },
+    { "value": "GAME", "label": "Game" },
+    { "value": "COMIC", "label": "Comic" },
+    { "value": "MULTIMEDIA_PROJECT", "label": "Multimedia Project" },
+    { "value": "PICTURE_BOOK", "label": "Picture Book" },
+    { "value": "OTHER", "label": "Other" }
+  ],
+  "countries": [
+    { "value": "JP", "label": "🇯🇵 Japan" },
+    { "value": "KR", "label": "🇰🇷 South Korea" },
+    { "value": "CN", "label": "🇨🇳 China" },
+    { "value": "TW", "label": "🇹🇼 Taiwan" }
+  ],
+  "sortOptions": [
+    { "value": "TRENDING_DESC", "label": "Trending" },
+    { "value": "POPULARITY_DESC", "label": "Popularity" },
+    { "value": "SCORE_DESC", "label": "Average Score" },
+    { "value": "FAVOURITES_DESC", "label": "Favorites" },
+    { "value": "START_DATE_DESC", "label": "Release Date" },
+    { "value": "TITLE_ENGLISH", "label": "Title" },
+    { "value": "ID_DESC", "label": "Date Added" }
+  ],
+  "streamingServices": [
+    "Crunchyroll",
+    "Netflix",
+    "Hulu",
+    "Amazon Prime Video",
+    "Disney Plus",
+    "HIDIVE",
+    "Max",
+    "Bilibili TV",
+    "Tubi TV",
+    "YouTube",
+    "Adult Swim",
+    "Hoopla"
+  ]
+}

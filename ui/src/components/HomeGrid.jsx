@@ -2,7 +2,7 @@
 
 import { useAuth } from "@/components/context/AuthContext";
 import { useCollectionModal } from "@/components/context/CollectionModalContext";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import MovieCard from "./MovieCard";
 import Pagination from "./Pagination";
@@ -35,6 +35,38 @@ export default function HomeGrid({
   useEffect(() => {
     const activeProvider = searchParams.get("provider") || "tmdb";
 
+    // ── AniList Client-Side Fallback ──
+    if (activeProvider === "anilist") {
+      if (movieArr && movieArr.length > 0) {
+        setMovies(movieArr);
+        setTotalPages(displayTotalPages || 1);
+        return;
+      }
+
+      let isMounted = true;
+      setLoadingFallback(true);
+
+      const qs = new URLSearchParams(searchParams.toString());
+      fetch(`/api/anilist/browse?${qs.toString()}`)
+        .then((res) => (res.ok ? res.json() : { results: [], total_pages: 1 }))
+        .then((data) => {
+          if (!isMounted) return;
+          setMovies(data.results || []);
+          setTotalPages(data.total_pages || 1);
+        })
+        .catch((err) => {
+          console.error("AniList client fallback error:", err);
+          if (isMounted) setMovies([]);
+        })
+        .finally(() => {
+          if (isMounted) setLoadingFallback(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+
     // ── Watchmode Client-Side Fallback ──
     if (activeProvider === "watchmode") {
       if (movieArr && movieArr.length > 0) {
@@ -65,6 +97,14 @@ export default function HomeGrid({
       return () => {
         isMounted = false;
       };
+    }
+    // ── OMDb: SSR-only, no client-side fallback needed ──
+    if (activeProvider === "omdb") {
+      if (movieArr && movieArr.length > 0) {
+        setMovies(movieArr);
+        setTotalPages(displayTotalPages || 1);
+      }
+      return;
     }
 
     // ── TVmaze Client-Side Fallback ──
@@ -100,102 +140,28 @@ export default function HomeGrid({
       };
     }
 
-    // ── TMDB Client-Side Fallback (unchanged) ──
-    const hasLangParam = searchParams.has("lang");
-    const preferredLang = user?.language || "";
-
-    // If explicit ?lang param exists in URL OR user has no preferred language set, use SSR movieArr if available
-    if (hasLangParam || !preferredLang) {
-      if (movieArr && movieArr.length > 0) return;
+    // ── TMDB: SSR provides movieArr directly (server-side fetched with retry) ──
+    if (activeProvider === "tmdb" || !activeProvider) {
+      if (movieArr) {
+        setMovies(movieArr);
+        setTotalPages(displayTotalPages || 1);
+      }
+      return;
     }
+  }, [movieArr, searchParams, user?.language, mediaType, provider, displayTotalPages]);
 
-    let isMounted = true;
-    setLoadingFallback(true);
-
-    const page = Number(searchParams.get("page")) || 1;
-    const topRated = searchParams.get("topRated") === "true";
-    const lang = hasLangParam
-      ? (searchParams.get("lang") === "all" ? "" : (searchParams.get("lang") || ""))
-      : preferredLang;
-    const query = searchParams.get("query") || "";
-    const genre = searchParams.get("genre") || "";
-
-    const today = new Date().toISOString().split("T")[0];
-    const isTV = mediaType === "tv";
-    // Release types (movies only): 1=Premiere, 2=Theatrical (limited), 3=Theatrical, 4=Digital, 5=Physical, 6=TV
-    const officialReleaseTypes = "1|2|3|4|5|6";
-    // Date field differs: movies use release_date, TV uses first_air_date
-    const dateField = isTV ? "first_air_date" : "release_date";
-    const searchEndpoint = isTV ? "tv" : "movie";
-    const discoverEndpoint = isTV ? "tv" : "movie";
-
-    let url = "";
-    let isSearch = false;
-
-    if (query) {
-      url = `${BASE_URL}/search/${searchEndpoint}?api_key=${API_KEY}&query=${encodeURIComponent(query)}&page=${page}`;
-      isSearch = true;
-    } else if (topRated && !lang && !genre) {
-      url = `${BASE_URL}/discover/${discoverEndpoint}?api_key=${API_KEY}&page=${page}`;
-      url += `&sort_by=vote_average.desc&vote_count.gte=${isTV ? 100 : 150}`;
-      url += `&${dateField}.lte=${today}`;
-      if (!isTV) {
-        url += `&with_release_type=${encodeURIComponent(officialReleaseTypes)}`;
-      }
-    } else {
-      url = `${BASE_URL}/discover/${discoverEndpoint}?api_key=${API_KEY}&page=${page}`;
-      if (genre) url += `&with_genres=${genre}`;
-      if (lang) url += `&with_original_language=${lang}`;
-
-      // Restrict to already-aired/released content
-      url += `&${dateField}.lte=${today}`;
-      if (!isTV) {
-        url += `&with_release_type=${encodeURIComponent(officialReleaseTypes)}`;
-      }
-
-      if (topRated) {
-        const minVotes = lang ? 5 : (isTV ? 100 : 150);
-        url += `&sort_by=vote_average.desc&vote_count.gte=${minVotes}`;
-      } else if (lang) {
-        url += `&sort_by=popularity.desc`;
-      } else {
-        url += `&sort_by=${dateField}.desc`;
-      }
-    }
-
-    fetch(url)
-      .then((res) => res.json())
-      .then((data) => {
-        if (!isMounted) return;
-
-        let results = data.results || [];
-
-        // For search results, filter out placeholder/unauthorized entries
-        if (isSearch) {
-          results = results.filter((item) => {
-            const hasBasicInfo = item.poster_path && item.overview;
-            const itemDate = isTV ? item.first_air_date : item.release_date;
-            const isReleased = !itemDate || itemDate <= today;
-            return hasBasicInfo && isReleased;
-          });
-        }
-
-        if (results.length > 0) {
-          setMovies(results);
-          setTotalPages(Math.min(data.total_pages || 1, 500));
-        }
-      })
-      .catch((err) => console.error("Client fallback fetch error:", err))
-      .finally(() => {
-        if (isMounted) setLoadingFallback(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [movieArr, searchParams, user?.language, mediaType, provider]);
-
+  const router = useRouter();
   const activeProvider = searchParams.get("provider") || "tmdb";
+  const activeSortBy = searchParams.get("sortBy") || (activeProvider === "anilist" ? "POPULARITY_DESC" : "popularity.desc");
+
+  const handleSortChange = (newSort) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    if (newSort) params.set("sortBy", newSort);
+    else params.delete("sortBy");
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
   const typeLabel =
     activeProvider === "tvmaze"
       ? "TV shows"
@@ -207,7 +173,71 @@ export default function HomeGrid({
 
   return (
     <main className="col-span-full lg:col-span-9 lg:h-full lg:overflow-y-auto p-8 custom-scrollbar">
-      {movies.length > 0 ? (
+      {/* Top Header Bar with Top-Right Sort Dropdown */}
+      <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
+        <div className="flex items-center gap-2">
+          {activeProvider === "anilist" && (
+            <span className="text-xs font-bold text-white/60 uppercase tracking-widest flex items-center gap-2">
+              <span className="w-2 h-2 bg-brand rounded-full inline-block animate-pulse"></span>
+              {searchParams.get("category")
+                ? `${searchParams.get("category").replace(/_/g, " ")}`
+                : "AniList Collection"}
+            </span>
+          )}
+        </div>
+
+        {/* Professional Top Right Sort Dropdown (Hidden for OMDb) */}
+        {activeProvider !== "omdb" && (
+          <div className="flex items-center gap-2.5">
+            <span className="text-xs font-bold text-white/40 uppercase tracking-wider">
+              Sort
+            </span>
+            <div className="relative">
+              <select
+                value={activeSortBy}
+                onChange={(e) => handleSortChange(e.target.value)}
+                className="bg-slate-800/80 text-white text-xs font-semibold px-3.5 py-1.5 pr-8 rounded-xl border border-white/15 focus:border-brand focus:ring-1 focus:ring-brand outline-none cursor-pointer appearance-none shadow-sm hover:border-white/30 transition-all">
+                {activeProvider === "anilist" ? (
+                  <>
+                    <option value="TRENDING_DESC">Trending</option>
+                    <option value="POPULARITY_DESC">Popularity</option>
+                    <option value="SCORE_DESC">Average Score</option>
+                    <option value="FAVOURITES_DESC">Favorites</option>
+                    <option value="START_DATE_DESC">Release Date</option>
+                    <option value="TITLE_ENGLISH">Title</option>
+                    <option value="ID_DESC">Date Added</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="popularity.desc">Popularity</option>
+                    <option value="vote_average.desc">Rating</option>
+                    <option value="release_date.desc">Release Date</option>
+                  </>
+                )}
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-white/40">
+                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
+                  <path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" />
+                </svg>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {activeProvider === "omdb" && !searchParams.get("query") && !searchParams.get("imdbId") ? (
+        <div className="h-[60vh] flex flex-col items-center justify-center text-center p-6">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 text-2xl shadow-lg shadow-amber-500/5">
+            🎬
+          </div>
+          <h2 className="text-xl font-bold text-white mb-2 tracking-tight">
+            Search Movies & TV Shows on OMDb
+          </h2>
+          <p className="text-sm text-white/50 max-w-md leading-relaxed">
+            Use the left sidebar to search by <span className="text-amber-400 font-semibold">Title</span>, <span className="text-amber-400 font-semibold">Release Year</span>, <span className="text-amber-400 font-semibold">Type</span>, or <span className="text-amber-400 font-semibold">IMDb ID</span>.
+          </p>
+        </div>
+      ) : movies.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
           {movies.map((movie) => (
             <MovieCard

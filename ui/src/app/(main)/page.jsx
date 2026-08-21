@@ -2,6 +2,7 @@ export const dynamic = "force-dynamic";
 
 import AsideFilter from "@/components/AsideFilter";
 import HomeGrid from "@/components/HomeGrid";
+import AniListHomepage from "@/components/AniListHomepage";
 import {
   getShows as tvmazeGetShows,
   getGenres as tvmazeGenres,
@@ -15,6 +16,14 @@ import {
   searchMedia as watchmodeSearch,
   getGenres as watchmodeGenres,
 } from "@/lib/providers/watchmodeAdapter";
+import {
+  browseMedia as anilistBrowse,
+  searchMedia as anilistSearch,
+  getAnimeSeasons as anilistAnimeSeasons,
+  getGenres as anilistGenres,
+  getTags as anilistTags,
+} from "@/lib/providers/anilistAdapter";
+import { searchMedia as omdbSearch } from "@/lib/providers/omdbAdapter";
 
 const API_KEY = process.env.TMDB_API_KEY;
 const BASE_URL = "https://api.themoviedb.org/3";
@@ -32,7 +41,7 @@ async function fetchWithRetry(url, options = {}, retries = 5, delayMs = 500) {
   }
 }
 
-/* ── TMDB getMedia (unchanged logic) ── */
+/* ── TMDB getMedia ── */
 async function getMedia(
   page = 1,
   topRated = false,
@@ -40,6 +49,7 @@ async function getMedia(
   query = "",
   genre = "",
   type = "movie",
+  sortBy = "",
 ) {
   const today = new Date().toISOString().split("T")[0];
   const isTV = type === "tv";
@@ -47,6 +57,10 @@ async function getMedia(
   const dateField = isTV ? "first_air_date" : "release_date";
   let url = "";
   let isSearch = false;
+
+  const resolvedSort = sortBy || (topRated ? "vote_average.desc" : "popularity.desc");
+  const isSortByRating = resolvedSort.startsWith("vote_average");
+  const isSortByDate = resolvedSort.startsWith("release_date") || resolvedSort.startsWith("first_air_date");
 
   if (query) {
     const searchType = isTV ? "tv" : "movie";
@@ -69,13 +83,14 @@ async function getMedia(
     if (!isTV) {
       url += `&with_release_type=${encodeURIComponent(officialReleaseTypes)}`;
     }
-    if (topRated) {
+
+    if (isSortByRating || topRated) {
       const minVotes = lang ? 5 : (isTV ? 100 : 150);
       url += `&sort_by=vote_average.desc&vote_count.gte=${minVotes}`;
-    } else if (lang) {
-      url += `&sort_by=popularity.desc`;
-    } else {
+    } else if (isSortByDate) {
       url += `&sort_by=${dateField}.desc`;
+    } else {
+      url += `&sort_by=popularity.desc`;
     }
   }
 
@@ -84,9 +99,11 @@ async function getMedia(
     if (!res.ok) return { results: [], total_pages: 0 };
     const data = await res.json();
 
-    if (isSearch && data.results) {
+    if (data.results) {
       data.results = data.results.filter((item) => {
-        const hasBasicInfo = item.poster_path && item.overview;
+        const hasImage = Boolean(item.poster_path || item.backdrop_path);
+        if (!isSearch) return hasImage;
+        const hasBasicInfo = hasImage && item.overview;
         const itemDate = isTV ? item.first_air_date : item.release_date;
         const isReleased = !itemDate || itemDate <= today;
         return hasBasicInfo && isReleased;
@@ -179,11 +196,143 @@ async function getWatchmodeData(params) {
   });
 }
 
+/* ── AniList SSR data fetch ── */
+async function getAnilistData(params) {
+  const query = params.query || "";
+  const page = Number(params.page) || 1;
+  const type = (params.type || "ANIME").toUpperCase() === "MANGA" ? "MANGA" : "ANIME";
+  const category = params.category || (query || params.genre || params.tag ? "" : "trending");
+
+  const { currentSeason, currentYear, nextSeason, nextYear } = anilistAnimeSeasons();
+
+  let season = params.season || "";
+  let seasonYear = params.seasonYear || "";
+  let status = params.status || "";
+  let sortBy = params.sortBy || "";
+
+  if (category === "trending") {
+    sortBy = sortBy || "TRENDING_DESC";
+  } else if (category === "this_season") {
+    if (type === "ANIME") {
+      season = season || currentSeason;
+      seasonYear = seasonYear || currentYear;
+      sortBy = sortBy || "POPULARITY_DESC";
+    } else {
+      sortBy = sortBy || "SCORE_DESC";
+    }
+  } else if (category === "next_season") {
+    if (type === "ANIME") {
+      season = season || nextSeason;
+      seasonYear = seasonYear || nextYear;
+      status = status || "NOT_YET_RELEASED";
+      sortBy = sortBy || "POPULARITY_DESC";
+    } else {
+      status = status || "RELEASING";
+      sortBy = sortBy || "POPULARITY_DESC";
+    }
+  } else if (category === "all_time_popular") {
+    sortBy = sortBy || "POPULARITY_DESC";
+  } else if (category === "top_100") {
+    sortBy = sortBy || "SCORE_DESC";
+  } else {
+    sortBy = sortBy || "POPULARITY_DESC";
+  }
+
+  if (query) {
+    return await anilistSearch(query, page, type);
+  }
+
+  return await anilistBrowse({
+    page,
+    type,
+    genre: params.genre || "",
+    tag: params.tag || "",
+    season,
+    seasonYear,
+    format: params.format || "",
+    status,
+    source: params.source || "",
+    country: params.country || "",
+    streamingOn: params.streamingOn || "",
+    yearStart: params.yearStart || "",
+    yearEnd: params.yearEnd || "",
+    episodesMin: params.episodesMin || "",
+    episodesMax: params.episodesMax || "",
+    durationMin: params.durationMin || "",
+    durationMax: params.durationMax || "",
+    sortBy,
+  });
+}
+
 export default async function Home({ searchParams }) {
   const params = await searchParams;
 
   const provider = params.provider || "tmdb";
   const currentPage = Number(params.page) || 1;
+
+  // ── AniList Provider ──
+  if (provider === "anilist") {
+    const anilistType = (params.type || "ANIME").toUpperCase() === "MANGA" ? "MANGA" : "ANIME";
+    const [anilistData, genresArr, tagsArr] = await Promise.all([
+      getAnilistData(params),
+      anilistGenres(),
+      anilistTags(),
+    ]);
+
+    return (
+      <div className="lg:h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
+        <AsideFilter
+          genresArr={genresArr}
+          tagsArr={tagsArr}
+          currentGenre={params.genre || ""}
+          currentQuery={params.query || ""}
+          currentType={anilistType}
+          provider="anilist"
+        />
+
+        <HomeGrid
+          movieArr={anilistData.results || []}
+          currentPage={currentPage}
+          displayTotalPages={anilistData.total_pages || 1}
+          mediaType={anilistType === "MANGA" ? "manga" : "tv"}
+          provider="anilist"
+        />
+      </div>
+    );
+  }
+
+  // ── OMDb Provider ──
+  if (provider === "omdb") {
+    const query = params.query || "";
+    const imdbId = params.imdbId || "";
+    const omdbData = (query || imdbId)
+      ? await omdbSearch({
+          query,
+          imdbId,
+          type: params.type || "",
+          year: params.year || "",
+          page: currentPage,
+        })
+      : { results: [], totalPages: 1 };
+
+    return (
+      <div className="lg:h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
+        <AsideFilter
+          genresArr={[]}
+          currentQuery={params.query || ""}
+          provider="omdb"
+        />
+
+        <HomeGrid
+          movieArr={omdbData.results || []}
+          currentPage={currentPage}
+          displayTotalPages={omdbData.totalPages || 1}
+          mediaType={params.type === "series" ? "tv" : "movie"}
+          provider="omdb"
+        />
+      </div>
+    );
+  }
 
   // ── Watchmode Provider ──
   if (provider === "watchmode") {
@@ -255,8 +404,10 @@ export default async function Home({ searchParams }) {
   const genre = params.genre || "";
   const mediaType = params.type === "tv" ? "tv" : "movie";
 
+  const sortBy = params.sortBy || "";
+
   const [mediaData, languagesArr, genresArr] = await Promise.all([
-    getMedia(currentPage, isTopRated, language, query, genre, mediaType),
+    getMedia(currentPage, isTopRated, language, query, genre, mediaType, sortBy),
     getLanguages(),
     getGenres(mediaType),
   ]);

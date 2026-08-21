@@ -2,6 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import FilteredLanguagesArr from "@/data/FilteredLanguagesArr.json";
+import LanguageRegionMappedData from "@/data/LanguageRegionMappedData.json";
 import dynamic from "next/dynamic";
 import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/components/context/AuthContext";
@@ -21,11 +22,25 @@ import {
   getSortOptions as watchmodeSortOptions,
   getRegions as watchmodeRegions,
 } from "@/lib/providers/watchmodeAdapter";
+import {
+  getAnimeCategories as anilistAnimeCategories,
+  getMangaCategories as anilistMangaCategories,
+  getAnimeFormats as anilistAnimeFormats,
+  getMangaFormats as anilistMangaFormats,
+  getAiringStatuses as anilistAiringStatuses,
+  getPublishingStatuses as anilistPublishingStatuses,
+  getSeasons as anilistSeasons,
+  getSources as anilistSources,
+  getCountries as anilistCountries,
+  getSortOptions as anilistSortOptions,
+  getStreamingServices as anilistStreamingServices,
+} from "@/lib/providers/anilistAdapter";
 
 const Select = dynamic(() => import("react-select"), { ssr: false });
 
 export default function AsideFilter({
   genresArr = [],
+  tagsArr = [],
   currentLang,
   Genre,
   currentType = "movie",
@@ -35,21 +50,43 @@ export default function AsideFilter({
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const [isGenresOpen, setIsGenresOpen] = useState(true);
+  const [isAdvancedTagsOpen, setIsAdvancedTagsOpen] = useState(false);
   const [hoveredWatchDesc, setHoveredWatchDesc] = useState(null);
 
   const activeProvider = searchParams.get("provider") || "tmdb";
   const isTvmaze = activeProvider === "tvmaze";
   const isWatchmode = activeProvider === "watchmode";
+  const isAnilist = activeProvider === "anilist";
+  const isOmdb = activeProvider === "omdb";
 
-  // Search state for controlled input
+  // Focus refs to prevent searchParams sync from overwriting active typing
+  const isSearchFocusedRef = useRef(false);
+  const isYearFocusedRef = useRef(false);
+  const isImdbFocusedRef = useRef(false);
+
+  // Search state for controlled inputs
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("query") || "",
   );
+  const [yearQuery, setYearQuery] = useState(
+    searchParams.get("year") || "",
+  );
+  const [imdbIdQuery, setImdbIdQuery] = useState(
+    searchParams.get("imdbId") || "",
+  );
   const searchTimeoutRef = useRef(null);
 
-  // Sync search input when searchParams change
+  // Sync search inputs when searchParams change (only if user is not actively typing)
   useEffect(() => {
-    setSearchQuery(searchParams.get("query") || "");
+    if (!isSearchFocusedRef.current) {
+      setSearchQuery(searchParams.get("query") || "");
+    }
+    if (!isYearFocusedRef.current) {
+      setYearQuery(searchParams.get("year") || "");
+    }
+    if (!isImdbFocusedRef.current) {
+      setImdbIdQuery(searchParams.get("imdbId") || "");
+    }
   }, [searchParams]);
 
   // Save active filter state to sessionStorage whenever filters change
@@ -98,45 +135,19 @@ export default function AsideFilter({
   ];
 
   const activeLang = searchParams.has("lang")
-    ? (currentLang || "all")
-    : (user?.language || "all");
+    ? (searchParams.get("lang") === "all" ? "" : searchParams.get("lang"))
+    : "";
 
   const currentLanguageOptions = isTvmaze
     ? tvmazeLanguageOptions
     : languageOptions;
+
   const defaultValue =
     currentLanguageOptions.find((opt) => opt.value === activeLang) ||
     currentLanguageOptions[0];
 
-  // --- OTT Region ---
-  const regionOptions = [
-    { value: "IN", label: "India" },
-    { value: "US", label: "United States" },
-    { value: "GB", label: "United Kingdom" },
-    { value: "CA", label: "Canada" },
-    { value: "AU", label: "Australia" },
-    { value: "DE", label: "Germany" },
-    { value: "FR", label: "France" },
-    { value: "JP", label: "Japan" },
-    { value: "KR", label: "South Korea" },
-    { value: "BR", label: "Brazil" },
-    { value: "IT", label: "Italy" },
-    { value: "ES", label: "Spain" },
-    { value: "MX", label: "Mexico" },
-    { value: "SE", label: "Sweden" },
-    { value: "NL", label: "Netherlands" },
-    { value: "SG", label: "Singapore" },
-    { value: "AE", label: "UAE" },
-    { value: "ZA", label: "South Africa" },
-    { value: "PH", label: "Philippines" },
-    { value: "TH", label: "Thailand" },
-  ];
-
-  // ── Watchmode-specific filter values ──
-  const wmContentTypes = watchmodeContentTypes();
-  const wmServiceTypes = watchmodeServiceTypes();
-  const wmSortOptions = watchmodeSortOptions();
-  const wmRegionOptions = watchmodeRegions();
+  // ── TMDB & Watchmode OTT Region Options ──
+  const userRegion = user?.region || "IN";
 
   const SUPPORTED_WM_REGIONS = ["US", "IN", "CA"];
   const rawRegion = searchParams.has("region")
@@ -147,25 +158,54 @@ export default function AsideFilter({
     ? (rawRegion && SUPPORTED_WM_REGIONS.includes(rawRegion.toUpperCase()) ? rawRegion.toUpperCase() : "US")
     : (rawRegion || "IN");
 
-  const defaultRegion = isWatchmode
-    ? (wmRegionOptions.find((opt) => opt.value === activeRegion) || wmRegionOptions[0])
-    : (regionOptions.find((opt) => opt.value === activeRegion) || regionOptions[0]);
+  const regionOptions = Array.from(
+    new Map(
+      LanguageRegionMappedData.map((item) => [
+        item.region,
+        { value: item.region, label: item.regionName },
+      ])
+    ).values()
+  ).sort((a, b) => a.label.localeCompare(b.label));
 
-  // --- Watch Option (Monetization Type - TMDB) ---
-  const watchOptionOptions = [
-    { value: "flatrate", label: "Streaming", desc: "Subscription streaming (Netflix, Prime, etc.)" },
-    { value: "buy", label: "Purchase", desc: "Digital purchase to own permanently" },
-    { value: "rent", label: "Rental", desc: "Digital rental for a limited period" },
-    { value: "free", label: "Free", desc: "Free streaming without subscription" },
-    { value: "ads", label: "Ads-Supported", desc: "Free streaming with advertisements" },
-  ];
+  const defaultRegion =
+    regionOptions.find((r) => r.value === userRegion) || regionOptions[0];
 
+  // ── Watchmode OTT Region Options ──
+  const wmRegionOptions = watchmodeRegions().map((r) => ({
+    value: r.code,
+    label: `${r.flag} ${r.country}`,
+  }));
+
+  // ── Watch Option (Monetization Types) ──
   const activeWatchOption = searchParams.has("watchOption")
     ? (searchParams.get("watchOption") || "flatrate")
     : (user?.watchOption || "flatrate");
 
+  const watchOptionOptions = [
+    {
+      value: "flatrate",
+      label: "Streaming",
+      desc: "Included with subscription (Netflix, Prime, Hotstar, etc.)",
+    },
+    {
+      value: "rent",
+      label: "Rent",
+      desc: "Pay a one-time fee to watch for a 48-hour window",
+    },
+    {
+      value: "buy",
+      label: "Buy",
+      desc: "Purchase to own digitally in your library permanently",
+    },
+    {
+      value: "free",
+      label: "Free",
+      desc: "Watch for free with ads (YouTube, MX Player, JioCinema, etc.)",
+    },
+  ];
+
   const defaultWatchOption =
-    watchOptionOptions.find((opt) => opt.value === activeWatchOption) ||
+    watchOptionOptions.find((o) => o.value === activeWatchOption) ||
     watchOptionOptions[0];
 
   // ── TVmaze-specific filter values ──
@@ -193,6 +233,31 @@ export default function AsideFilter({
   const activeSourceIds = searchParams.get("sourceIds")?.split(",").filter(Boolean) || [];
   const activeWmSortBy = searchParams.get("sortBy") || "popularity_desc";
 
+  const wmContentTypes = watchmodeContentTypes();
+  const wmServiceTypes = watchmodeServiceTypes();
+  const wmSortOptions = watchmodeSortOptions();
+
+  // ── AniList-specific filter values ──
+  const activeAnilistType = (searchParams.get("type") || "ANIME").toUpperCase() === "MANGA" ? "MANGA" : "ANIME";
+  const activeCategory = searchParams.get("category") || (searchParams.get("query") || searchParams.get("genre") || searchParams.get("tag") ? "" : "trending");
+  const activeSeason = searchParams.get("season") || "";
+  const activeFormat = searchParams.get("format") || "";
+  const activeStatus = searchParams.get("status") || "";
+  const activeSource = searchParams.get("source") || "";
+  const activeAnilistCountry = searchParams.get("country") || "";
+  const activeSortBy = searchParams.get("sortBy") || "POPULARITY_DESC";
+  const activeTags = searchParams.get("tag")?.split(",").filter(Boolean) || [];
+  const activeStreamingOn = searchParams.get("streamingOn")?.split(",").filter(Boolean) || [];
+
+  const anilistCategoryOptions = activeAnilistType === "MANGA" ? anilistMangaCategories() : anilistAnimeCategories();
+  const anilistFormatOptions = activeAnilistType === "MANGA" ? anilistMangaFormats() : anilistAnimeFormats();
+  const anilistStatusOptions = activeAnilistType === "MANGA" ? anilistPublishingStatuses() : anilistAiringStatuses();
+  const anilistSeasonOptions = anilistSeasons();
+  const anilistSourceOptions = anilistSources();
+  const anilistCountryOptions = anilistCountries();
+  const anilistSortByOptions = anilistSortOptions();
+  const anilistStreamingOptions = anilistStreamingServices();
+
   const updateRoute = (key, value) => {
     const params = new URLSearchParams(searchParams.toString());
 
@@ -202,11 +267,18 @@ export default function AsideFilter({
       router.push(`?${newParams.toString()}`, { scroll: false });
       return;
     } else if (key === "type") {
-      params.delete("genre");
-      params.delete("query");
-      params.delete("page");
-      if (value && value !== "movie") params.set("type", value);
-      else params.delete("type");
+      if (isOmdb) {
+        // OMDb type toggle: preserve query, year, imdbId — only change type
+        params.delete("page");
+        if (value) params.set("type", value);
+        else params.delete("type");
+      } else {
+        params.delete("genre");
+        params.delete("query");
+        params.delete("page");
+        if (value && value !== "movie") params.set("type", value);
+        else params.delete("type");
+      }
     } else if (key === "query") {
       params.delete("lang");
       params.delete("topRated");
@@ -242,6 +314,30 @@ export default function AsideFilter({
       } else {
         const newGenres = [...currentGenres, value];
         params.set("genre", newGenres.join(","));
+      }
+    } else if (key === "tag") {
+      params.delete("query");
+      const currentTags = params.get("tag")
+        ? params.get("tag").split(",").filter(Boolean)
+        : [];
+      if (currentTags.includes(value)) {
+        const filtered = currentTags.filter((t) => t !== value);
+        if (filtered.length > 0) params.set("tag", filtered.join(","));
+        else params.delete("tag");
+      } else {
+        params.set("tag", [...currentTags, value].join(","));
+      }
+    } else if (key === "streamingOn") {
+      params.delete("query");
+      const currentServices = params.get("streamingOn")
+        ? params.get("streamingOn").split(",").filter(Boolean)
+        : [];
+      if (currentServices.includes(value)) {
+        const filtered = currentServices.filter((s) => s !== value);
+        if (filtered.length > 0) params.set("streamingOn", filtered.join(","));
+        else params.delete("streamingOn");
+      } else {
+        params.set("streamingOn", [...currentServices, value].join(","));
       }
     } else if (key === "serviceTypes") {
       params.delete("query");
@@ -294,7 +390,7 @@ export default function AsideFilter({
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
-  // Debounced search handler
+  // Debounced search handlers
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearchQuery(val);
@@ -302,6 +398,52 @@ export default function AsideFilter({
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     searchTimeoutRef.current = setTimeout(() => {
       updateRoute("query", val.trim());
+    }, 400);
+  };
+
+  const handleTitleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchQuery(val);
+    setImdbIdQuery("");
+
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("imdbId");
+      params.delete("page");
+      if (val.trim()) params.set("query", val.trim());
+      else params.delete("query");
+      router.push(`?${params.toString()}`, { scroll: false });
+    }, 400);
+  };
+
+  const handleYearSearchChange = (e) => {
+    const val = e.target.value;
+    setYearQuery(val);
+
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("page");
+      if (val.trim()) params.set("year", val.trim());
+      else params.delete("year");
+      router.push(`?${params.toString()}`, { scroll: false });
+    }, 400);
+  };
+
+  const handleImdbIdSearchChange = (e) => {
+    const val = e.target.value;
+    setImdbIdQuery(val);
+    setSearchQuery("");
+
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete("query");
+      params.delete("page");
+      if (val.trim()) params.set("imdbId", val.trim());
+      else params.delete("imdbId");
+      router.push(`?${params.toString()}`, { scroll: false });
     }, 400);
   };
 
@@ -380,7 +522,16 @@ export default function AsideFilter({
           onClick={() => {
             const userRegion = user?.region || "IN";
             let resetQs;
-            if (isWatchmode) {
+            if (isOmdb) {
+              resetQs = `?provider=omdb`;
+              setSearchQuery("");
+              setYearQuery("");
+              setImdbIdQuery("");
+            } else if (isAnilist) {
+              const currentAnilistType = (searchParams.get("type") || "ANIME").toUpperCase() === "MANGA" ? "MANGA" : "ANIME";
+              resetQs = `?provider=anilist&type=${currentAnilistType}`;
+              setIsAdvancedTagsOpen(false);
+            } else if (isWatchmode) {
               resetQs = `?provider=watchmode&region=US`;
             } else if (isTvmaze) {
               resetQs = `?provider=tvmaze`;
@@ -390,6 +541,8 @@ export default function AsideFilter({
                 : `?lang=all&region=${userRegion}&watchOption=flatrate`;
             }
             setSearchQuery("");
+            setYearQuery("");
+            setImdbIdQuery("");
             if (typeof window !== "undefined") {
               sessionStorage.setItem("mmc_home_filters", resetQs);
             }
@@ -401,7 +554,7 @@ export default function AsideFilter({
       </div>
 
       {/* 0. Media Type Toggle — Movie / TV (TMDB only) */}
-      {!isTvmaze && !isWatchmode && (
+      {!isTvmaze && !isWatchmode && !isAnilist && !isOmdb && (
         <div className="space-y-2 ml-2">
           <label className="text-xs font-bold text-white/50 uppercase">
             Media Type
@@ -431,59 +584,248 @@ export default function AsideFilter({
         </div>
       )}
 
+      {/* 0. Media Type Toggle — Anime / Manga (AniList only) */}
+      {isAnilist && (
+        <div className="space-y-2 ml-2">
+          <label className="text-xs font-bold text-white/50 uppercase tracking-wider">
+            Media Type
+          </label>
+          <div className="flex rounded-xl overflow-hidden border border-white/10 bg-dark-body1 p-0.5">
+            <button
+              onClick={() => updateRoute("type", "ANIME")}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-200 rounded-lg flex items-center justify-center ${
+                activeAnilistType === "ANIME"
+                  ? "bg-brand text-white shadow-md shadow-brand/20"
+                  : "text-white/50 hover:text-white/80 hover:bg-white/5"
+              }`}>
+              Anime
+            </button>
+            <button
+              onClick={() => updateRoute("type", "MANGA")}
+              className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider transition-all duration-200 rounded-lg flex items-center justify-center ${
+                activeAnilistType === "MANGA"
+                  ? "bg-brand text-white shadow-md shadow-brand/20"
+                  : "text-white/50 hover:text-white/80 hover:bg-white/5"
+              }`}>
+              Manga
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* TVmaze: TV Shows Only indicator */}
       {isTvmaze && (
-        <div className="ml-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-purple-500/10 border border-purple-500/20">
-          <span className="text-lg">📺</span>
-          <span className="text-xs font-semibold text-purple-300 uppercase tracking-wider">
-            TV Shows & Web Series Only
+        <div className="ml-2 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800/60 border border-purple-500/20 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+          <span className="text-xs font-bold text-purple-300 uppercase tracking-wider">
+            TV Shows & Web Series Catalog
           </span>
         </div>
       )}
 
       {/* Watchmode: Streaming Availability Provider Indicator */}
       {isWatchmode && (
-        <div className="ml-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
-          <span className="text-lg">⚡</span>
-          <span className="text-xs font-semibold text-cyan-300 uppercase tracking-wider">
+        <div className="ml-2 flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800/60 border border-cyan-500/20 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-cyan-400"></span>
+          <span className="text-xs font-bold text-cyan-300 uppercase tracking-wider">
             Watchmode Universal Catalog
           </span>
         </div>
       )}
 
-      {/* 1. Search Bar with Icon */}
-      <div className="space-y-2 relative">
-        <div className="relative flex items-center">
-          <svg
-            className="absolute left-4 w-4 h-4 text-white/40 pointer-events-none"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="2.5">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-            />
-          </svg>
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className="w-full pl-11 pr-4 py-2.5 rounded-full border border-white/20 bg-dark-body1 text-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-white/30 text-sm"
-            placeholder={
-              isWatchmode
-                ? "Search titles on Watchmode..."
-                : isTvmaze
-                  ? "Search TV shows & series..."
-                  : isTV
-                    ? "Search TV show title..."
-                    : "Search movie title..."
-            }
-          />
+      {/* AniList: Anime & Manga Provider Indicator */}
+      {isAnilist && (
+        <div className="ml-2 flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-800/60 border border-pink-500/20 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-pink-400 animate-pulse"></span>
+          <span className="text-xs font-bold text-pink-300 uppercase tracking-wider">
+            AniList Database
+          </span>
         </div>
-      </div>
+      )}
+
+      {/* OMDb: Provider Indicator */}
+      {isOmdb && (
+        <div className="ml-2 flex items-center gap-2.5 px-3.5 py-2 rounded-xl bg-slate-800/60 border border-amber-500/20 shadow-sm">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          <span className="text-xs font-bold text-amber-300 uppercase tracking-wider">
+            OMDb & IMDb Database
+          </span>
+        </div>
+      )}
+
+      {/* OMDb Filters: 1st Type, 2nd Title, 3rd Year, 4th IMDb ID */}
+      {isOmdb ? (
+        <div className="space-y-4 ml-2">
+          {/* 1st: Type Toggle */}
+          <div className="flex flex-col space-y-1.5">
+            <label className="text-xs font-bold text-white/50 uppercase tracking-wider">
+              Type Filter
+            </label>
+            <div className="flex rounded-xl overflow-hidden border border-white/10 bg-dark-body1 p-0.5">
+              <button
+                type="button"
+                onClick={() => updateRoute("type", "")}
+                className={`flex-1 py-1.5 text-xs font-bold uppercase tracking-wider transition-all rounded-lg ${
+                  !searchParams.get("type")
+                    ? "bg-brand text-white shadow-md"
+                    : "text-white/50 hover:text-white/80"
+                }`}>
+                All
+              </button>
+              <button
+                type="button"
+                onClick={() => updateRoute("type", "movie")}
+                className={`flex-1 py-1.5 text-xs font-bold uppercase tracking-wider transition-all rounded-lg ${
+                  searchParams.get("type") === "movie"
+                    ? "bg-brand text-white shadow-md"
+                    : "text-white/50 hover:text-white/80"
+                }`}>
+                Movies
+              </button>
+              <button
+                type="button"
+                onClick={() => updateRoute("type", "series")}
+                className={`flex-1 py-1.5 text-xs font-bold uppercase tracking-wider transition-all rounded-lg ${
+                  searchParams.get("type") === "series"
+                    ? "bg-brand text-white shadow-md"
+                    : "text-white/50 hover:text-white/80"
+                }`}>
+                Series
+              </button>
+            </div>
+          </div>
+
+          {/* 2nd: Title Search Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-white/50 uppercase tracking-wider">
+              Title Search
+            </label>
+            <div className="relative flex items-center">
+              <svg
+                className="absolute left-4 w-4 h-4 text-white/40 pointer-events-none"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth="2.5">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+              <input
+                type="search"
+                value={searchQuery}
+                onFocus={() => {
+                  isSearchFocusedRef.current = true;
+                }}
+                onBlur={() => {
+                  isSearchFocusedRef.current = false;
+                }}
+                onChange={handleTitleSearchChange}
+                className="w-full pl-11 pr-4 py-2.5 rounded-full border border-white/20 bg-dark-body1 text-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-white/30 text-sm"
+                placeholder="Search movie or TV title..."
+              />
+            </div>
+          </div>
+
+          {/* 3rd: Release Year Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-white/50 uppercase tracking-wider">
+              Release Year
+            </label>
+            <div className="relative flex items-center">
+              <span className="absolute left-4 text-xs font-bold text-white/40 pointer-events-none">
+                📅
+              </span>
+              <input
+                type="number"
+                min="1900"
+                max="2030"
+                value={yearQuery}
+                onFocus={() => {
+                  isYearFocusedRef.current = true;
+                }}
+                onBlur={() => {
+                  isYearFocusedRef.current = false;
+                }}
+                onChange={handleYearSearchChange}
+                className="w-full pl-11 pr-4 py-2.5 rounded-full border border-white/20 bg-dark-body1 text-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-white/30 text-sm font-mono"
+                placeholder="e.g. 2024"
+              />
+            </div>
+          </div>
+
+          {/* 4th: IMDb ID Search Input */}
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-white/50 uppercase tracking-wider">
+              IMDb ID Search
+            </label>
+            <div className="relative flex items-center">
+              <span className="absolute left-4 text-xs font-mono font-bold text-amber-400 pointer-events-none">
+                id
+              </span>
+              <input
+                type="search"
+                value={imdbIdQuery}
+                onFocus={() => {
+                  isImdbFocusedRef.current = true;
+                }}
+                onBlur={() => {
+                  isImdbFocusedRef.current = false;
+                }}
+                onChange={handleImdbIdSearchChange}
+                className="w-full pl-11 pr-4 py-2.5 rounded-full border border-white/20 bg-dark-body1 text-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-white/30 text-sm font-mono"
+                placeholder="e.g. tt1375666"
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2 relative">
+          <div className="relative flex items-center">
+            <svg
+              className="absolute left-4 w-4 h-4 text-white/40 pointer-events-none"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth="2.5">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+            <input
+              type="search"
+              value={searchQuery}
+              onFocus={() => {
+                isSearchFocusedRef.current = true;
+              }}
+              onBlur={() => {
+                isSearchFocusedRef.current = false;
+              }}
+              onChange={handleSearchChange}
+              className="w-full pl-11 pr-4 py-2.5 rounded-full border border-white/20 bg-dark-body1 text-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-white/30 text-sm"
+              placeholder={
+                isAnilist
+                  ? (activeAnilistType === "MANGA" ? "Search manga & novels..." : "Search anime series & movies...")
+                  : isWatchmode
+                    ? "Search titles on Watchmode..."
+                    : isTvmaze
+                      ? "Search TV shows & series..."
+                      : isTV
+                        ? "Search TV show title..."
+                        : "Search movie title..."
+              }
+            />
+          </div>
+        </div>
+      )}
+
+
 
       {/* ═══════════ Watchmode-specific Filters ═══════════ */}
       {isWatchmode && (
@@ -717,34 +1059,358 @@ export default function AsideFilter({
         </>
       )}
 
+      {/* ═══════════ AniList-specific Filters ═══════════ */}
+      {isAnilist && (
+        <>
+          {/* AniList: Curated Collection / Category */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              Curated Category
+            </label>
+            <Select
+              id="anilistCategorySelect"
+              options={[{ value: "", label: "All Titles" }, ...anilistCategoryOptions]}
+              value={
+                activeCategory
+                  ? anilistCategoryOptions.find((opt) => opt.value === activeCategory) || {
+                      value: "",
+                      label: "All Titles",
+                    }
+                  : { value: "", label: "All Titles" }
+              }
+              placeholder="Select category..."
+              isSearchable={false}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              unstyled
+              classNames={selectClassNames}
+              onChange={(selectedOption) =>
+                updateRoute("category", selectedOption.value)
+              }
+            />
+          </div>
+
+
+
+          {/* AniList: Season (Anime only) */}
+          {activeAnilistType === "ANIME" && (
+            <div className="flex flex-col space-y-2 ml-2">
+              <label className="text-xs font-bold text-white/50 uppercase">
+                Season
+              </label>
+              <Select
+                id="anilistSeasonSelect"
+                options={[{ value: "", label: "All Seasons" }, ...anilistSeasonOptions]}
+                value={
+                  activeSeason
+                    ? anilistSeasonOptions.find((opt) => opt.value === activeSeason) || {
+                        value: "",
+                        label: "All Seasons",
+                      }
+                    : { value: "", label: "All Seasons" }
+                }
+                placeholder="Select season..."
+                isSearchable={false}
+                menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+                menuPosition="fixed"
+                styles={{
+                  menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+                }}
+                unstyled
+                classNames={selectClassNames}
+                onChange={(selectedOption) =>
+                  updateRoute("season", selectedOption.value)
+                }
+              />
+            </div>
+          )}
+
+          {/* AniList: Format */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              Format
+            </label>
+            <Select
+              id="anilistFormatSelect"
+              options={[{ value: "", label: "All Formats" }, ...anilistFormatOptions]}
+              value={
+                activeFormat
+                  ? anilistFormatOptions.find((opt) => opt.value === activeFormat) || {
+                      value: "",
+                      label: "All Formats",
+                    }
+                  : { value: "", label: "All Formats" }
+              }
+              placeholder="Select format..."
+              isSearchable={false}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              unstyled
+              classNames={selectClassNames}
+              onChange={(selectedOption) =>
+                updateRoute("format", selectedOption.value)
+              }
+            />
+          </div>
+
+          {/* AniList: Airing / Publishing Status */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              {activeAnilistType === "MANGA" ? "Publishing Status" : "Airing Status"}
+            </label>
+            <Select
+              id="anilistStatusSelect"
+              options={[{ value: "", label: "All Statuses" }, ...anilistStatusOptions]}
+              value={
+                activeStatus
+                  ? anilistStatusOptions.find((opt) => opt.value === activeStatus) || {
+                      value: "",
+                      label: "All Statuses",
+                    }
+                  : { value: "", label: "All Statuses" }
+              }
+              placeholder="Select status..."
+              isSearchable={false}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              unstyled
+              classNames={selectClassNames}
+              onChange={(selectedOption) =>
+                updateRoute("status", selectedOption.value)
+              }
+            />
+          </div>
+
+          {/* AniList: Streaming On (Anime only) */}
+          {activeAnilistType === "ANIME" && (
+            <div className="flex flex-col space-y-2 ml-2">
+              <label className="text-xs font-bold text-white/50 uppercase">
+                Streaming On
+              </label>
+              <div className="flex flex-wrap gap-1.5 pt-1 max-h-40 overflow-y-auto custom-scrollbar">
+                {anilistStreamingOptions.map((service) => {
+                  const isActive = activeStreamingOn.includes(service);
+                  return (
+                    <button
+                      key={service}
+                      type="button"
+                      onClick={() => updateRoute("streamingOn", service)}
+                      className={`px-2.5 py-1 text-[11px] rounded-full border cursor-pointer transition-all duration-150 select-none font-medium ${
+                        isActive
+                          ? "bg-brand border-brand text-white shadow-sm"
+                          : "bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:bg-white/10"
+                      }`}>
+                      {service}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* AniList: Country of Origin */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              Country of Origin
+            </label>
+            <Select
+              id="anilistCountrySelect"
+              options={[{ value: "", label: "All Countries" }, ...anilistCountryOptions]}
+              value={
+                activeAnilistCountry
+                  ? anilistCountryOptions.find((opt) => opt.value === activeAnilistCountry) || {
+                      value: "",
+                      label: "All Countries",
+                    }
+                  : { value: "", label: "All Countries" }
+              }
+              placeholder="Select country..."
+              isSearchable={false}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              unstyled
+              classNames={selectClassNames}
+              onChange={(selectedOption) =>
+                updateRoute("country", selectedOption.value)
+              }
+            />
+          </div>
+
+          {/* AniList: Source Material */}
+          <div className="flex flex-col space-y-2 ml-2">
+            <label className="text-xs font-bold text-white/50 uppercase">
+              Source Material
+            </label>
+            <Select
+              id="anilistSourceSelect"
+              options={[{ value: "", label: "All Sources" }, ...anilistSourceOptions]}
+              value={
+                activeSource
+                  ? anilistSourceOptions.find((opt) => opt.value === activeSource) || {
+                      value: "",
+                      label: "All Sources",
+                    }
+                  : { value: "", label: "All Sources" }
+              }
+              placeholder="Select source..."
+              isSearchable={false}
+              menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+              menuPosition="fixed"
+              styles={{
+                menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+              }}
+              unstyled
+              classNames={selectClassNames}
+              onChange={(selectedOption) =>
+                updateRoute("source", selectedOption.value)
+              }
+            />
+          </div>
+
+          {/* AniList: Year Range Slider (1940 - 2027) */}
+          <RangeSlider
+            title="Year Range"
+            min={1940}
+            max={2027}
+            step={1}
+            lowValue={searchParams.get("yearStart") || 1940}
+            highValue={searchParams.get("yearEnd") || 2027}
+            onChange={(min, max) =>
+              updateRange("yearStart", min, "yearEnd", max, 1940, 2027)
+            }
+          />
+
+          {/* AniList: Episodes Range Slider (Anime only) */}
+          {activeAnilistType === "ANIME" && (
+            <RangeSlider
+              title="Episodes"
+              min={0}
+              max={150}
+              step={1}
+              lowValue={searchParams.get("episodesMin") || 0}
+              highValue={searchParams.get("episodesMax") || 150}
+              onChange={(min, max) =>
+                updateRange("episodesMin", min, "episodesMax", max, 0, 150)
+              }
+            />
+          )}
+
+          {/* AniList: Duration Range Slider (Anime only) */}
+          {activeAnilistType === "ANIME" && (
+            <RangeSlider
+              title="Duration (mins)"
+              min={0}
+              max={170}
+              step={5}
+              unit="m"
+              lowValue={searchParams.get("durationMin") || 0}
+              highValue={searchParams.get("durationMax") || 170}
+              onChange={(min, max) =>
+                updateRange("durationMin", min, "durationMax", max, 0, 170)
+              }
+            />
+          )}
+
+          {/* AniList: Advanced Genre & Tag Filters (Accordion - Collapsed by Default) */}
+          <div className="flex flex-col space-y-3 ml-2 pt-2 border-t border-white/10">
+            <button
+              type="button"
+              className="flex justify-between items-center w-full cursor-pointer group text-left"
+              onClick={() => setIsAdvancedTagsOpen(!isAdvancedTagsOpen)}>
+              <label className="text-xs font-bold text-white/70 uppercase tracking-wider cursor-pointer group-hover:text-white transition-colors flex items-center gap-1.5">
+                <span>Advanced Genre & Tag Filters</span>
+                {activeTags.length > 0 && (
+                  <span className="px-1.5 py-0.5 text-[9px] rounded-full bg-brand/20 text-brand border border-brand/30">
+                    {activeTags.length}
+                  </span>
+                )}
+              </label>
+              <span className="text-white/40 group-hover:text-white transition-colors text-sm font-mono">
+                {isAdvancedTagsOpen ? "−" : "+"}
+              </span>
+            </button>
+
+            {isAdvancedTagsOpen && (
+              <div className="flex flex-col space-y-4 pt-1 animate-in slide-in-from-top-2 duration-300">
+                {tagsArr && tagsArr.length > 0 ? (
+                  tagsArr.map((group) => (
+                    <div key={group.category} className="flex flex-col space-y-1.5">
+                      <span className="text-[10px] font-bold text-brand uppercase tracking-wider">
+                        {group.category}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {group.tags.map((tagName) => {
+                          const isActive = activeTags.includes(tagName);
+                          return (
+                            <button
+                              key={tagName}
+                              type="button"
+                              onClick={() => updateRoute("tag", tagName)}
+                              className={`px-2 py-0.5 text-[10px] rounded-md border cursor-pointer transition-all duration-150 select-none ${
+                                isActive
+                                  ? "bg-brand border-brand text-white font-semibold shadow-sm"
+                                  : "bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:bg-white/10"
+                              }`}>
+                              {tagName}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-white/40 italic py-2">
+                    Loading advanced tags...
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
       {/* ═══════════ Shared Filters ═══════════ */}
 
-      {/* 2. Language dropdown */}
-      <div className="flex flex-col space-y-2 ml-2">
-        <label className="text-xs font-bold text-white/50 uppercase">
-          Language
-        </label>
-        <Select
-          id="languageSelect"
-          options={currentLanguageOptions}
-          value={defaultValue}
-          placeholder="Search and select language"
-          isSearchable
-          menuPortalTarget={typeof document !== "undefined" ? document.body : null}
-          menuPosition="fixed"
-          styles={{
-            menuPortal: (base) => ({ ...base, zIndex: 9999 }),
-          }}
-          unstyled
-          classNames={selectClassNames}
-          onChange={(selectedOption) =>
-            updateRoute("lang", selectedOption.value)
-          }
-        />
-      </div>
+      {/* 2. Language dropdown (TMDB & TVmaze) */}
+      {!isAnilist && !isOmdb && (
+        <div className="flex flex-col space-y-2 ml-2">
+          <label className="text-xs font-bold text-white/50 uppercase">
+            Language
+          </label>
+          <Select
+            id="languageSelect"
+            options={currentLanguageOptions}
+            value={defaultValue}
+            placeholder="Search and select language"
+            isSearchable
+            menuPortalTarget={typeof document !== "undefined" ? document.body : null}
+            menuPosition="fixed"
+            styles={{
+              menuPortal: (base) => ({ ...base, zIndex: 9999 }),
+            }}
+            unstyled
+            classNames={selectClassNames}
+            onChange={(selectedOption) =>
+              updateRoute("lang", selectedOption.value)
+            }
+          />
+        </div>
+      )}
 
       {/* 3. OTT Region dropdown (TMDB & Watchmode) */}
-      {!isTvmaze && (
+      {!isTvmaze && !isAnilist && !isOmdb && (
         <div className="flex flex-col space-y-2 ml-2">
           <label className="text-xs font-bold text-white/50 uppercase">
             OTT Region
@@ -774,7 +1440,7 @@ export default function AsideFilter({
       )}
 
       {/* 4. Watch Option - Monetization Type (TMDB only) */}
-      {!isTvmaze && !isWatchmode && (
+      {!isTvmaze && !isWatchmode && !isAnilist && !isOmdb && (
         <div className="flex flex-col space-y-2 ml-2">
           <label className="text-xs font-bold text-white/50 uppercase">
             Watch Option
@@ -811,48 +1477,50 @@ export default function AsideFilter({
         </div>
       )}
 
-      {/* 5. Genres - Toggleable */}
-      <div className="flex flex-col space-y-3 ml-2">
-        <div
-          className="flex justify-between items-center cursor-pointer group"
-          onClick={() => setIsGenresOpen(!isGenresOpen)}>
-          <label className="text-xs font-bold text-white/50 uppercase cursor-pointer">
-            Genres
-          </label>
-          <span className="text-white/40 group-hover:text-white transition-colors">
-            {isGenresOpen ? "−" : "+"}
-          </span>
-        </div>
-
-        {isGenresOpen && (
-          <div className="flex flex-wrap gap-2 max-h-75 overflow-y-auto custom-scrollbar pr-2 animate-in slide-in-from-top-2 duration-300">
-            {genresArr.map((genre) => {
-              const genreKey = String(genre.id);
-              const isActive = selectedGenres.includes(genreKey);
-              return (
-                <label
-                  key={genre.id}
-                  className={`px-3 py-1.5 text-[11px] rounded-full border cursor-pointer transition-all duration-200 select-none font-medium ${
-                    isActive
-                      ? "bg-brand border-brand text-white shadow-lg shadow-brand/30"
-                      : "bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:bg-white/10"
-                  }`}>
-                  <input
-                    type="checkbox"
-                    className="hidden"
-                    checked={isActive}
-                    onChange={() => updateRoute("genre", genreKey)}
-                  />
-                  {genre.name}
-                </label>
-              );
-            })}
+      {/* 5. Genres - Toggleable (TMDB, TVmaze, Watchmode, AniList) */}
+      {!isOmdb && genresArr && genresArr.length > 0 && (
+        <div className="flex flex-col space-y-3 ml-2 pt-2 border-t border-white/10">
+          <div
+            className="flex justify-between items-center cursor-pointer group"
+            onClick={() => setIsGenresOpen(!isGenresOpen)}>
+            <label className="text-xs font-bold text-white/50 uppercase cursor-pointer">
+              Genres
+            </label>
+            <span className="text-white/40 group-hover:text-white transition-colors">
+              {isGenresOpen ? "−" : "+"}
+            </span>
           </div>
-        )}
-      </div>
+
+          {isGenresOpen && (
+            <div className="flex flex-wrap gap-2 animate-in slide-in-from-top-2 duration-300">
+              {genresArr.map((genre) => {
+                const genreKey = String(genre.id);
+                const isActive = selectedGenres.includes(genreKey);
+                return (
+                  <label
+                    key={genre.id}
+                    className={`px-3 py-1.5 text-[11px] rounded-full border cursor-pointer transition-all duration-200 select-none font-medium ${
+                      isActive
+                        ? "bg-brand border-brand text-white shadow-lg shadow-brand/30"
+                        : "bg-white/5 border-white/10 text-white/60 hover:border-white/30 hover:bg-white/10"
+                    }`}>
+                    <input
+                      type="checkbox"
+                      className="hidden"
+                      checked={isActive}
+                      onChange={() => updateRoute("genre", genreKey)}
+                    />
+                    {genre.name}
+                  </label>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 6. Top Rated (TMDB only) */}
-      {!isTvmaze && !isWatchmode && (
+      {!isTvmaze && !isWatchmode && !isAnilist && !isOmdb && (
         <div className="flex items-center justify-between px-2 py-4 border-t border-white/5">
           <label
             htmlFor="rating-checkbox"

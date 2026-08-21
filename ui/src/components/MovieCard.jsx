@@ -404,7 +404,9 @@ export default function MovieCard({ movie: rawMovie, item, mediaType = "movie", 
   } else {
     const raw = movie.poster_path || movie.posterSrc || movie.backdrop_path;
     if (raw && (raw.startsWith("http://") || raw.startsWith("https://"))) {
-      posterSrc = raw;
+      posterSrc = raw.includes("media-amazon.com")
+        ? `/api/omdb/image?url=${encodeURIComponent(raw)}`
+        : raw;
     } else {
       const cleanPosterPath = raw
         ? raw.startsWith("/")

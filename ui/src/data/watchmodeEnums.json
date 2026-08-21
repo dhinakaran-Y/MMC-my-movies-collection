@@ -89,6 +89,86 @@
     {
       "value": "CA",
       "label": "Canada (CA)"
+    },
+    {
+      "value": "GB",
+      "label": "United Kingdom (GB)"
+    },
+    {
+      "value": "AU",
+      "label": "Australia (AU)"
+    },
+    {
+      "value": "DE",
+      "label": "Germany (DE)"
+    },
+    {
+      "value": "FR",
+      "label": "France (FR)"
+    },
+    {
+      "value": "ES",
+      "label": "Spain (ES)"
+    },
+    {
+      "value": "IT",
+      "label": "Italy (IT)"
+    },
+    {
+      "value": "BR",
+      "label": "Brazil (BR)"
+    },
+    {
+      "value": "JP",
+      "label": "Japan (JP)"
+    },
+    {
+      "value": "MX",
+      "label": "Mexico (MX)"
+    },
+    {
+      "value": "ZA",
+      "label": "South Africa (ZA)"
+    },
+    {
+      "value": "AR",
+      "label": "Argentina (AR)"
+    },
+    {
+      "value": "NL",
+      "label": "Netherlands (NL)"
+    },
+    {
+      "value": "SE",
+      "label": "Sweden (SE)"
+    },
+    {
+      "value": "NO",
+      "label": "Norway (NO)"
+    },
+    {
+      "value": "DK",
+      "label": "Denmark (DK)"
+    },
+    {
+      "value": "FI",
+      "label": "Finland (FI)"
+    },
+    {
+      "value": "IE",
+      "label": "Ireland (IE)"
+    },
+    {
+      "value": "NZ",
+      "label": "New Zealand (NZ)"
+    },
+    {
+      "value": "SG",
+      "label": "Singapore (SG)"
+    },
+    {
+      "value": "KR",
+      "label": "South Korea (KR)"
     }
   ],
   "topStreamingSources": [

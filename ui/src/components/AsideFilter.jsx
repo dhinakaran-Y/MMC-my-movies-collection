@@ -149,13 +149,18 @@ export default function AsideFilter({
   // ── TMDB & Watchmode OTT Region Options ──
   const userRegion = user?.region || "IN";
 
-  const SUPPORTED_WM_REGIONS = ["US", "IN", "CA"];
+  // ── Watchmode OTT Region Options ──
+  const wmRegionOptions = (watchmodeRegions() || []).map((r) => ({
+    value: r.value || r.country || r.code,
+    label: r.label || `${r.name || ""} (${r.country || r.value || ""})`,
+  }));
+
   const rawRegion = searchParams.has("region")
     ? (searchParams.get("region") || "")
     : (user?.region || "");
 
   const activeRegion = isWatchmode
-    ? (rawRegion && SUPPORTED_WM_REGIONS.includes(rawRegion.toUpperCase()) ? rawRegion.toUpperCase() : "US")
+    ? (rawRegion && wmRegionOptions.some((r) => r.value === rawRegion.toUpperCase()) ? rawRegion.toUpperCase() : "US")
     : (rawRegion || "IN");
 
   const regionOptions = Array.from(
@@ -167,14 +172,9 @@ export default function AsideFilter({
     ).values()
   ).sort((a, b) => a.label.localeCompare(b.label));
 
-  const defaultRegion =
-    regionOptions.find((r) => r.value === userRegion) || regionOptions[0];
-
-  // ── Watchmode OTT Region Options ──
-  const wmRegionOptions = watchmodeRegions().map((r) => ({
-    value: r.code,
-    label: `${r.flag} ${r.country}`,
-  }));
+  const defaultRegion = isWatchmode
+    ? (wmRegionOptions.find((r) => r.value === activeRegion) || wmRegionOptions[0])
+    : (regionOptions.find((r) => r.value === userRegion) || regionOptions[0]);
 
   // ── Watch Option (Monetization Types) ──
   const activeWatchOption = searchParams.has("watchOption")
@@ -264,7 +264,14 @@ export default function AsideFilter({
     if (key === "provider") {
       const newParams = new URLSearchParams();
       if (value && value !== "tmdb") newParams.set("provider", value);
-      router.push(`?${newParams.toString()}`, { scroll: false });
+      const newQs = newParams.toString() ? `?${newParams.toString()}` : "";
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("mmc_home_filters", newQs);
+      }
+      setSearchQuery("");
+      setYearQuery("");
+      setImdbIdQuery("");
+      router.push(`/${newQs}`, { scroll: false });
       return;
     } else if (key === "type") {
       if (isOmdb) {
@@ -352,12 +359,15 @@ export default function AsideFilter({
             .filter(Boolean)
         : [];
 
-      if (current.includes(value)) {
-        const filtered = current.filter((id) => id !== value);
+      const valIds = String(value).split(",").filter(Boolean);
+      const isAlreadySelected = valIds.some((id) => current.includes(id));
+
+      if (isAlreadySelected) {
+        const filtered = current.filter((id) => !valIds.includes(id));
         if (filtered.length > 0) params.set("sourceIds", filtered.join(","));
         else params.delete("sourceIds");
       } else {
-        const updated = [...current, value];
+        const updated = Array.from(new Set([...current, ...valIds]));
         params.set("sourceIds", updated.join(","));
       }
     } else {

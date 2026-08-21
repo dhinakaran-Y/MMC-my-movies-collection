@@ -24,22 +24,10 @@ import {
   getTags as anilistTags,
 } from "@/lib/providers/anilistAdapter";
 import { searchMedia as omdbSearch } from "@/lib/providers/omdbAdapter";
+import { tmdbFetch } from "@/lib/providers/tmdbFetch";
 
-const API_KEY = process.env.TMDB_API_KEY;
+const API_KEY = process.env.TMDB_API_KEY || "3472ccb0d97ebc192cbd0e56bd799736";
 const BASE_URL = "https://api.themoviedb.org/3";
-
-async function fetchWithRetry(url, options = {}, retries = 5, delayMs = 500) {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const res = await fetch(url, options);
-      if (res.ok) return res;
-      if (attempt === retries) return res;
-    } catch (error) {
-      if (attempt === retries) throw error;
-    }
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
-  }
-}
 
 /* ── TMDB getMedia ── */
 async function getMedia(
@@ -95,7 +83,7 @@ async function getMedia(
   }
 
   try {
-    const res = await fetchWithRetry(url, { next: { revalidate: 3600 } });
+    const res = await tmdbFetch(url);
     if (!res.ok) return { results: [], total_pages: 0 };
     const data = await res.json();
 
@@ -112,16 +100,15 @@ async function getMedia(
 
     return data;
   } catch (error) {
-    console.error("Fetch Error after retries:", error);
+    console.error("TMDB getMedia Error:", error);
     return { results: [], total_pages: 0 };
   }
 }
 
 async function getLanguages() {
   try {
-    const res = await fetchWithRetry(
-      `${BASE_URL}/configuration/languages?api_key=${API_KEY}`,
-      { next: { revalidate: 86400 } },
+    const res = await tmdbFetch(
+      `${BASE_URL}/configuration/languages?api_key=${API_KEY}`
     );
     if (!res.ok) return [];
     const data = await res.json();
@@ -134,9 +121,8 @@ async function getLanguages() {
 async function getGenres(type = "movie") {
   try {
     const genreType = type === "tv" ? "tv" : "movie";
-    const res = await fetchWithRetry(
-      `${BASE_URL}/genre/${genreType}/list?api_key=${API_KEY}`,
-      { next: { revalidate: 86400 } },
+    const res = await tmdbFetch(
+      `${BASE_URL}/genre/${genreType}/list?api_key=${API_KEY}`
     );
     if (!res.ok) return [];
     const data = await res.json();

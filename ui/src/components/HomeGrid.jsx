@@ -173,21 +173,18 @@ export default function HomeGrid({
 
   return (
     <main className="col-span-full lg:col-span-9 lg:h-full lg:overflow-y-auto p-8 custom-scrollbar">
-      {/* Top Header Bar with Top-Right Sort Dropdown */}
-      <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
-        <div className="flex items-center gap-2">
-          {activeProvider === "anilist" && (
+      {/* Top Header Bar with Top-Right Sort Dropdown (Exclusively for AniList) */}
+      {activeProvider === "anilist" && (
+        <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
+          <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-white/60 uppercase tracking-widest flex items-center gap-2">
               <span className="w-2 h-2 bg-brand rounded-full inline-block animate-pulse"></span>
               {searchParams.get("category")
                 ? `${searchParams.get("category").replace(/_/g, " ")}`
                 : "AniList Collection"}
             </span>
-          )}
-        </div>
+          </div>
 
-        {/* Professional Top Right Sort Dropdown (Hidden for OMDb) */}
-        {activeProvider !== "omdb" && (
           <div className="flex items-center gap-2.5">
             <span className="text-xs font-bold text-white/40 uppercase tracking-wider">
               Sort
@@ -197,23 +194,13 @@ export default function HomeGrid({
                 value={activeSortBy}
                 onChange={(e) => handleSortChange(e.target.value)}
                 className="bg-slate-800/80 text-white text-xs font-semibold px-3.5 py-1.5 pr-8 rounded-xl border border-white/15 focus:border-brand focus:ring-1 focus:ring-brand outline-none cursor-pointer appearance-none shadow-sm hover:border-white/30 transition-all">
-                {activeProvider === "anilist" ? (
-                  <>
-                    <option value="TRENDING_DESC">Trending</option>
-                    <option value="POPULARITY_DESC">Popularity</option>
-                    <option value="SCORE_DESC">Average Score</option>
-                    <option value="FAVOURITES_DESC">Favorites</option>
-                    <option value="START_DATE_DESC">Release Date</option>
-                    <option value="TITLE_ENGLISH">Title</option>
-                    <option value="ID_DESC">Date Added</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="popularity.desc">Popularity</option>
-                    <option value="vote_average.desc">Rating</option>
-                    <option value="release_date.desc">Release Date</option>
-                  </>
-                )}
+                <option value="TRENDING_DESC">Trending</option>
+                <option value="POPULARITY_DESC">Popularity</option>
+                <option value="SCORE_DESC">Average Score</option>
+                <option value="FAVOURITES_DESC">Favorites</option>
+                <option value="START_DATE_DESC">Release Date</option>
+                <option value="TITLE_ENGLISH">Title</option>
+                <option value="ID_DESC">Date Added</option>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2.5 text-white/40">
                 <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 20 20">
@@ -222,8 +209,8 @@ export default function HomeGrid({
               </div>
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {activeProvider === "omdb" && !searchParams.get("query") && !searchParams.get("imdbId") ? (
         <div className="h-[60vh] flex flex-col items-center justify-center text-center p-6">

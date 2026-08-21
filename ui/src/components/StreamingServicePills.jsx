@@ -23,19 +23,38 @@ export default function StreamingServicePills({
       .then((res) => (res.ok ? res.json() : []))
       .then((data) => {
         if (isMounted && Array.isArray(data) && data.length > 0) {
-          const unique = [];
-          const seenIds = new Set();
+          const groupedMap = new Map();
           for (const s of data) {
-            if (s && s.id && !seenIds.has(s.id) && s.name) {
-              seenIds.add(s.id);
-              unique.push({
-                id: s.id,
-                name: s.name,
+            if (!s || !s.name) continue;
+            const cleanName = s.name.trim();
+            const key = cleanName.toLowerCase();
+            const rawId = String(s.id);
+            const idList = rawId.includes(",") ? rawId.split(",") : [rawId];
+
+            if (!groupedMap.has(key)) {
+              groupedMap.set(key, {
+                id: rawId,
+                ids: idList,
+                name: cleanName,
                 type: s.type,
               });
+            } else {
+              const existing = groupedMap.get(key);
+              for (const id of idList) {
+                if (!existing.ids.includes(id)) {
+                  existing.ids.push(id);
+                }
+              }
+              existing.id = existing.ids.join(",");
+              if (s.type === "sub" || (s.type === "free" && existing.type === "tve")) {
+                existing.type = s.type;
+              }
             }
           }
-          unique.sort((a, b) => a.name.localeCompare(b.name));
+
+          const unique = Array.from(groupedMap.values()).sort((a, b) =>
+            a.name.localeCompare(b.name)
+          );
           setSources(unique);
         }
       })
@@ -118,11 +137,14 @@ export default function StreamingServicePills({
             {filteredSources.length > 0 ? (
               filteredSources.map((source) => {
                 const sourceKey = String(source.id);
-                const isSelected = selectedSourceIds.includes(sourceKey);
+                const sourceIdsList = source.ids || sourceKey.split(",");
+                const isSelected = sourceIdsList.some((id) =>
+                  selectedSourceIds.includes(String(id))
+                );
 
                 return (
                   <button
-                    key={`wm-src-${source.id}`}
+                    key={`wm-src-${source.name}-${source.id}`}
                     type="button"
                     onClick={() => onToggleSourceId(sourceKey)}
                     title={source.name}

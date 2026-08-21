@@ -6,6 +6,7 @@
  */
 
 import tvmazeEnumsData from "@/data/tvmazeEnums.json";
+import { tvmazeFetch } from "@/lib/providers/tvmazeFetch";
 
 const TVMAZE_API_BASE = "https://api.tvmaze.com";
 const TVMAZE_WEB_BASE = "https://www.tvmaze.com";
@@ -38,9 +39,14 @@ for (const [val, name] of tvmazeEnumsData.genres) {
 
 export const SORT_MAP = {
   popularity: "1",
+  "popularity.desc": "1",
+  "popularity_desc": "1",
   rating: "7",
+  "vote_average.desc": "7",
+  "rating_desc": "7",
   name: "3",
   newest: "5",
+  "release_date.desc": "5",
 };
 
 // Country Code to Country Name mapping
@@ -241,9 +247,8 @@ export async function searchShows(query) {
   if (!query || !query.trim()) return { results: [], total_pages: 1 };
 
   try {
-    const res = await fetch(
-      `${TVMAZE_API_BASE}/search/shows?q=${encodeURIComponent(query.trim())}`,
-      { next: { revalidate: 300 } }
+    const res = await tvmazeFetch(
+      `${TVMAZE_API_BASE}/search/shows?q=${encodeURIComponent(query.trim())}`
     );
     if (!res.ok) return { results: [], total_pages: 1 };
 
@@ -267,9 +272,8 @@ export async function browseShows(page = 1) {
   const tvmazePage = Math.max(0, page - 1);
 
   try {
-    const res = await fetch(
-      `${TVMAZE_API_BASE}/shows?page=${tvmazePage}`,
-      { next: { revalidate: 3600 } }
+    const res = await tvmazeFetch(
+      `${TVMAZE_API_BASE}/shows?page=${tvmazePage}`
     );
 
     if (!res.ok) {
@@ -296,9 +300,8 @@ export async function browseShows(page = 1) {
  */
 export async function getShowDetail(showId) {
   try {
-    const res = await fetch(
-      `${TVMAZE_API_BASE}/shows/${showId}?embed=episodes`,
-      { next: { revalidate: 3600 } }
+    const res = await tvmazeFetch(
+      `${TVMAZE_API_BASE}/shows/${showId}?embed=episodes`
     );
     if (!res.ok) return null;
 
@@ -393,15 +396,7 @@ export async function fetchWebFilteredShows({
   const url = `${TVMAZE_WEB_BASE}/shows${queryString ? `?${queryString}` : ""}`;
 
   try {
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        Accept:
-          "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-      },
-      cache: "no-store",
-    });
+    const res = await tvmazeFetch(url);
 
     if (!res.ok) {
       return { results: [], total_pages: 1 };
@@ -509,8 +504,40 @@ export async function getShows({
   }
 
   // 2. Filtered or sorted browsing (matches official website 1-to-1)
+  if (genres.length > 1) {
+    const promises = genres.slice(0, 6).map((g) =>
+      fetchWebFilteredShows({
+        page,
+        language,
+        country,
+        showStatus: status,
+        showType,
+        genre: g,
+        sortBy,
+      })
+    );
+    const resultsArr = await Promise.all(promises);
+    const seenIds = new Set();
+    const mergedCards = [];
+    let maxPages = 1;
+
+    for (const res of resultsArr) {
+      if (res.total_pages > maxPages) maxPages = res.total_pages;
+      for (const card of res.results || []) {
+        if (!seenIds.has(card.id)) {
+          seenIds.add(card.id);
+          mergedCards.push(card);
+        }
+      }
+    }
+
+    if (mergedCards.length > 0) {
+      return { results: mergedCards, total_pages: maxPages };
+    }
+  }
+
   const singleGenre = genres.length > 0 ? genres[0] : "";
-  return await fetchWebFilteredShows({
+  const webResult = await fetchWebFilteredShows({
     page,
     language,
     country,
@@ -519,6 +546,17 @@ export async function getShows({
     genre: singleGenre,
     sortBy,
   });
+
+  if (webResult.results && webResult.results.length > 0) {
+    return webResult;
+  }
+
+  // 3. Fallback: if web filter returned 0 results or failed, fallback to browseShows
+  if (!query && (!language || language === "all") && !country && !status && !showType && genres.length === 0) {
+    return await browseShows(page);
+  }
+
+  return webResult;
 }
 
 // --- Static Data Helpers for Dropdowns ---

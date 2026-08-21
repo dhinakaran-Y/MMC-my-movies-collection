@@ -5,6 +5,7 @@
  */
 
 import watchmodeEnums from "@/data/watchmodeEnums.json";
+import { tmdbFetch } from "@/lib/providers/tmdbFetch";
 
 const API_KEY =
   process.env.WATCHMODE_API_KEY || "GIhw9trw8A06USKolNrMUzjkY38PggsOChr9BMEQ";
@@ -29,9 +30,8 @@ async function fetchTmdbPoster(tmdbId, tmdbType = "movie") {
 
   const endpoint = tmdbType === "tv" ? "tv" : "movie";
   try {
-    const res = await fetch(
-      `https://api.themoviedb.org/3/${endpoint}/${tmdbId}?api_key=${TMDB_API_KEY}`,
-      { next: { revalidate: 86400 } },
+    const res = await tmdbFetch(
+      `https://api.themoviedb.org/3/${endpoint}/${tmdbId}?api_key=${TMDB_API_KEY}`
     );
     if (!res.ok) return null;
     const data = await res.json();
@@ -202,8 +202,41 @@ export async function getSources(region = "", types = "") {
     const res = await fetch(url, { next: { revalidate: 86400 } });
     if (!res.ok) throw new Error("Failed to fetch sources");
     const data = await res.json();
-    cachedSourcesByRegion[cacheKey] = data;
-    return data;
+
+    // Group and deduplicate sources by clean name
+    const groupedMap = new Map();
+    for (const src of data || []) {
+      const cleanName = (src.name || "").trim();
+      if (!cleanName) continue;
+
+      const key = cleanName.toLowerCase();
+      const strId = String(src.id);
+      if (!groupedMap.has(key)) {
+        groupedMap.set(key, {
+          ...src,
+          name: cleanName,
+          ids: [strId],
+          id: strId,
+        });
+      } else {
+        const existing = groupedMap.get(key);
+        if (!existing.ids.includes(strId)) {
+          existing.ids.push(strId);
+        }
+        if (src.type === "sub" || (src.type === "free" && existing.type === "tve")) {
+          existing.type = src.type;
+          existing.logo_100px = src.logo_100px || existing.logo_100px;
+        }
+        existing.id = existing.ids.join(",");
+      }
+    }
+
+    const deduplicated = Array.from(groupedMap.values()).sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+
+    cachedSourcesByRegion[cacheKey] = deduplicated;
+    return deduplicated;
   } catch (error) {
     console.error("Watchmode getSources error:", error);
     return (
@@ -334,8 +367,42 @@ export async function browseMedia(params = {}) {
   const lang = params.lang && params.lang !== "all" ? params.lang : "";
   if (lang) queryParams.set("languages", lang);
 
-  // Sort By
-  const sortBy = params.sortBy || params.sort_by || "popularity_desc";
+  // Sort By Validation & Normalization
+  const VALID_WM_SORTS = new Set([
+    "relevance_desc",
+    "relevance_asc",
+    "popularity_desc",
+    "popularity_asc",
+    "release_date_desc",
+    "release_date_asc",
+    "title_desc",
+    "title_asc",
+  ]);
+
+  const WM_SORT_MAP = {
+    "popularity.desc": "popularity_desc",
+    "popularity.asc": "popularity_asc",
+    popularity: "popularity_desc",
+    "vote_average.desc": "popularity_desc",
+    rating_desc: "popularity_desc",
+    rating: "popularity_desc",
+    "release_date.desc": "release_date_desc",
+    "release_date.asc": "release_date_asc",
+    newest: "release_date_desc",
+    "title.asc": "title_asc",
+    "title.desc": "title_desc",
+    name: "title_asc",
+    POPULARITY_DESC: "popularity_desc",
+    SCORE_DESC: "popularity_desc",
+    TRENDING_DESC: "popularity_desc",
+    START_DATE_DESC: "release_date_desc",
+    TITLE_ENGLISH: "title_asc",
+  };
+
+  const rawSort = params.sortBy || params.sort_by || "popularity_desc";
+  const sortBy = VALID_WM_SORTS.has(rawSort)
+    ? rawSort
+    : WM_SORT_MAP[rawSort] || "popularity_desc";
   queryParams.set("sort_by", sortBy);
 
   const url = `${BASE_URL}/list-titles/?${queryParams.toString()}`;

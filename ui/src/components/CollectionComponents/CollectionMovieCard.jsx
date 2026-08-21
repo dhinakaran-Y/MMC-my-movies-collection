@@ -36,7 +36,7 @@ function getMediaInfo(item, isCustom, isTvmaze, isWatchmode, isAnilist, isOmdb, 
   let posterSrc = "/fallbackImg.png";
   if (rawPoster) {
     if (rawPoster.startsWith("http://") || rawPoster.startsWith("https://")) {
-      posterSrc = isOmdb
+      posterSrc = (isOmdb || rawPoster.includes("media-amazon.com"))
         ? `/api/omdb/image?url=${encodeURIComponent(rawPoster)}`
         : rawPoster;
     } else {

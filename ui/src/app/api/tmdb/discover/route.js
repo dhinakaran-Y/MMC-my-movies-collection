@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { tmdbFetch } from "@/lib/providers/tmdbFetch";
 
 const TMDB_API_KEY = process.env.TMDB_API_KEY || "3472ccb0d97ebc192cbd0e56bd799736";
 const BASE_URL = "https://api.themoviedb.org/3";
@@ -40,21 +41,20 @@ export async function GET(request) {
     if (topRated) {
       const minVotes = lang ? 5 : (isTV ? 100 : 150);
       url += `&sort_by=vote_average.desc&vote_count.gte=${minVotes}`;
-    } else if (lang) {
-      url += `&sort_by=popularity.desc`;
     } else {
-      url += `&sort_by=${dateField}.desc`;
+      url += `&sort_by=popularity.desc`;
     }
   }
 
   try {
-    const res = await fetch(url, { next: { revalidate: 3600 } });
+    const res = await tmdbFetch(url);
     if (!res.ok) {
       return NextResponse.json({ results: [], total_pages: 1 });
     }
     const data = await res.json();
     return NextResponse.json(data);
   } catch (error) {
+    console.error("TMDB discover error:", error);
     return NextResponse.json({ results: [], total_pages: 1 });
   }
 }

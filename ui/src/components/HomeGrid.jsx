@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import MovieCard from "./MovieCard";
 import Pagination from "./Pagination";
+import ImdbGuide from "./ImdbGuide";
 const API_KEY = "3472ccb0d97ebc192cbd0e56bd799736";
 const BASE_URL = "https://api.themoviedb.org/3";
 
@@ -212,7 +213,9 @@ export default function HomeGrid({
         </div>
       )}
 
-      {activeProvider === "omdb" && !searchParams.get("query") && !searchParams.get("imdbId") ? (
+      {activeProvider === "omdb" && (searchParams.get("guide") === "imdb_id" || searchParams.get("guide") === "true") ? (
+        <ImdbGuide />
+      ) : activeProvider === "omdb" && !searchParams.get("query") && !searchParams.get("imdbId") ? (
         <div className="h-[60vh] flex flex-col items-center justify-center text-center p-6">
           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 text-2xl shadow-lg shadow-amber-500/5">
             🎬
@@ -223,6 +226,17 @@ export default function HomeGrid({
           <p className="text-sm text-white/50 max-w-md leading-relaxed">
             Use the left sidebar to search by <span className="text-amber-400 font-semibold">Title</span>, <span className="text-amber-400 font-semibold">Release Year</span>, <span className="text-amber-400 font-semibold">Type</span>, or <span className="text-amber-400 font-semibold">IMDb ID</span>.
           </p>
+          <button
+            onClick={() => {
+              const params = new URLSearchParams(searchParams.toString());
+              params.set("guide", "imdb_id");
+              router.push(`?${params.toString()}`, { scroll: false });
+            }}
+            className="mt-6 inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 text-xs font-semibold transition-all hover:scale-[1.02] cursor-pointer shadow-md"
+          >
+            <span>💡 How to get a movie&apos;s IMDb ID?</span>
+            <span className="text-amber-400 font-bold">→</span>
+          </button>
         </div>
       ) : movies.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">

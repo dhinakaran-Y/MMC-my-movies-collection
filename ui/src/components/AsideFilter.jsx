@@ -790,6 +790,33 @@ export default function AsideFilter({
                 placeholder="e.g. tt1375666"
               />
             </div>
+            <div className="pt-1 px-1">
+              <a
+                href="#imdb-guide"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.set("guide", "imdb_id");
+                  router.push(`?${params.toString()}`, { scroll: false });
+                }}
+                className="inline-flex items-center gap-1.5 text-xs text-amber-400/90 hover:text-amber-300 font-medium group transition-colors cursor-pointer"
+              >
+                <svg
+                  className="w-3.5 h-3.5 flex-shrink-0 text-amber-400 group-hover:scale-110 transition-transform"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+                <span className="hover:underline">How to get a movie&apos;s IMDb ID?</span>
+              </a>
+            </div>
           </div>
         </div>
       ) : (

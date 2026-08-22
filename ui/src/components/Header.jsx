@@ -65,9 +65,9 @@ export default function Header() {
               </>
             )}
             <Link
-              href={"/why"}
-              className={path === "/why" ? "text-brand" : "text-white"}>
-              Why ?
+              href={"/about"}
+              className={path === "/about" || path === "/why" ? "text-brand" : "text-white"}>
+              About
             </Link>
           </div>
         </nav>
@@ -139,10 +139,10 @@ export default function Header() {
             </>
           )}
           <Link
-            href={"/why"}
+            href={"/about"}
             onClick={toggleMenu}
-            className={path === "/why" ? "text-brand" : "text-white"}>
-            Why ?
+            className={path === "/about" || path === "/why" ? "text-brand" : "text-white"}>
+            About
           </Link>
         </div>
       )}

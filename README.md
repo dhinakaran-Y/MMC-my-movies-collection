@@ -21,7 +21,7 @@ Discover, organize, track, and share movies, TV shows, and anime with custom cat
 
 Tired of scattered notes, browser bookmarks, or messy screenshot folders to keep track of movies and shows? **My Movies Collection (MMC)** is a dedicated digital entertainment management platform built to centralize your viewing experience. 
 
-MMC aggregates entertainment data across multiple external providers (TMDB, AniList, TVmaze) into a unified interface, while giving you the freedom to build custom collections, track watched movies, create custom movie entries, and share your curated playlists.
+MMC aggregates entertainment data across multiple external providers (TMDB, AniList, TVmaze, Watchmode, OMDB) into a unified interface, while giving you the freedom to build custom collections, track watched movies, create custom movie entries, and share your curated playlists.
 
 ---
 

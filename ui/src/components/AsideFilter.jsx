@@ -58,6 +58,7 @@ export default function AsideFilter({
   const isWatchmode = activeProvider === "watchmode";
   const isAnilist = activeProvider === "anilist";
   const isOmdb = activeProvider === "omdb";
+  const isAllProviders = searchParams.get("allProviders") === "true";
 
   // Focus refs to prevent searchParams sync from overwriting active typing
   const isSearchFocusedRef = useRef(false);
@@ -457,6 +458,18 @@ export default function AsideFilter({
     }, 400);
   };
 
+  const handleToggleAllProviders = () => {
+    const nextVal = !isAllProviders;
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextVal) {
+      params.set("allProviders", "true");
+    } else {
+      params.delete("allProviders");
+    }
+    params.delete("page");
+    router.push(`?${params.toString()}`, { scroll: false });
+  };
+
   const selectedGenres = searchParams.get("genre")?.split(",").filter(Boolean) || [];
   const isTV = currentType === "tv" || isTvmaze;
 
@@ -735,9 +748,50 @@ export default function AsideFilter({
                 }}
                 onChange={handleTitleSearchChange}
                 className="w-full pl-11 pr-4 py-2.5 rounded-full border border-white/20 bg-dark-body1 text-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-white/30 text-sm"
-                placeholder="Search movie or TV title..."
+                placeholder={isAllProviders ? "Search across all providers..." : "Search movie or TV title..."}
               />
             </div>
+
+            {/* Multi-Provider Search Toggle */}
+            <button
+              type="button"
+              onClick={handleToggleAllProviders}
+              className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${
+                isAllProviders
+                  ? "bg-brand/15 border-brand/50 text-white shadow-[0_0_15px_rgba(229,9,20,0.15)]"
+                  : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+              }`}
+            >
+              <div className="flex flex-col text-left">
+                <span className="text-xs font-semibold flex items-center gap-1.5">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      isAllProviders
+                        ? "bg-brand animate-pulse shadow-[0_0_6px_rgba(229,9,20,0.8)]"
+                        : "bg-white/40"
+                    }`}
+                  />
+                  Search All Providers
+                </span>
+                <span className="text-[10px] text-white/40 font-normal">
+                  {isAllProviders
+                    ? "TMDB, AniList, TVmaze, Watchmode, OMDb"
+                    : "Search single selected provider"}
+                </span>
+              </div>
+
+              <div
+                className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                  isAllProviders ? "bg-brand" : "bg-white/20"
+                }`}
+              >
+                <span
+                  className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                    isAllProviders ? "translate-x-4" : "translate-x-0"
+                  }`}
+                />
+              </div>
+            </button>
           </div>
 
           {/* 3rd: Release Year Input */}
@@ -820,7 +874,7 @@ export default function AsideFilter({
           </div>
         </div>
       ) : (
-        <div className="space-y-2 relative">
+        <div className="space-y-2.5 relative">
           <div className="relative flex items-center">
             <svg
               className="absolute left-4 w-4 h-4 text-white/40 pointer-events-none"
@@ -847,18 +901,61 @@ export default function AsideFilter({
               onChange={handleSearchChange}
               className="w-full pl-11 pr-4 py-2.5 rounded-full border border-white/20 bg-dark-body1 text-white focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-all placeholder:text-white/30 text-sm"
               placeholder={
-                isAnilist
-                  ? (activeAnilistType === "MANGA" ? "Search manga & novels..." : "Search anime series & movies...")
-                  : isWatchmode
-                    ? "Search titles on Watchmode..."
-                    : isTvmaze
-                      ? "Search TV shows & series..."
-                      : isTV
-                        ? "Search TV show title..."
-                        : "Search movie title..."
+                isAllProviders
+                  ? "Search across all providers..."
+                  : isAnilist
+                    ? (activeAnilistType === "MANGA" ? "Search manga & novels..." : "Search anime series & movies...")
+                    : isWatchmode
+                      ? "Search titles on Watchmode..."
+                      : isTvmaze
+                        ? "Search TV shows & series..."
+                        : isTV
+                          ? "Search TV show title..."
+                          : "Search movie title..."
               }
             />
           </div>
+
+          {/* Multi-Provider Search Toggle */}
+          <button
+            type="button"
+            onClick={handleToggleAllProviders}
+            className={`w-full flex items-center justify-between px-3.5 py-2 rounded-xl border transition-all duration-200 cursor-pointer ${
+              isAllProviders
+                ? "bg-brand/15 border-brand/50 text-white shadow-[0_0_15px_rgba(229,9,20,0.15)]"
+                : "bg-white/5 border-white/10 text-white/70 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            <div className="flex flex-col text-left">
+              <span className="text-xs font-semibold flex items-center gap-1.5">
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    isAllProviders
+                      ? "bg-brand animate-pulse shadow-[0_0_6px_rgba(229,9,20,0.8)]"
+                      : "bg-white/40"
+                  }`}
+                />
+                Search All Providers
+              </span>
+              <span className="text-[10px] text-white/40 font-normal">
+                {isAllProviders
+                  ? "TMDB, AniList, TVmaze, Watchmode, OMDb"
+                  : "Search single selected provider"}
+              </span>
+            </div>
+
+            <div
+              className={`relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                isAllProviders ? "bg-brand" : "bg-white/20"
+              }`}
+            >
+              <span
+                className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                  isAllProviders ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </div>
+          </button>
         </div>
       )}
 

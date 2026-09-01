@@ -42,10 +42,11 @@ function reducer(state, action) {
 
 // --- Normalize media fields (movie vs TV) ---
 function getMediaInfo(item, mediaType, provider = "tmdb") {
-  const isTvmaze = provider === "tvmaze";
-  const isWatchmode = provider === "watchmode";
-  const isAnilist = provider === "anilist";
-  const isOmdb = provider === "omdb";
+  const effectiveProvider = item.provider || (provider === "all" ? "tmdb" : provider);
+  const isTvmaze = effectiveProvider === "tvmaze";
+  const isWatchmode = effectiveProvider === "watchmode";
+  const isAnilist = effectiveProvider === "anilist";
+  const isOmdb = effectiveProvider === "omdb";
 
   const resolvedMediaType = isTvmaze
     ? "tv"
@@ -200,9 +201,12 @@ export default function MovieCard({ movie: rawMovie, item, mediaType = "movie", 
   const { user } = useAuth();
   const { openModal } = useCollectionModal();
   const searchParams = useSearchParams();
-
-  const isTvmaze = provider === "tvmaze";
-  const isWatchmode = provider === "watchmode";
+  const isAllProviders = searchParams.get("allProviders") === "true" || provider === "all";
+  const effectiveProvider = movie.provider || (provider === "all" ? "tmdb" : provider);
+  const isTvmaze = effectiveProvider === "tvmaze";
+  const isWatchmode = effectiveProvider === "watchmode";
+  const isAnilist = effectiveProvider === "anilist";
+  const isOmdb = effectiveProvider === "omdb";
 
   // Resolve active region & watch option from URL params or user profile
   const activeRegion = searchParams.has("region")
@@ -215,22 +219,20 @@ export default function MovieCard({ movie: rawMovie, item, mediaType = "movie", 
   const userIdRef = useRef(user?._id);
   const movieIdRef = useRef(movie?.id);
 
-  if (!movie || !movie.id) return null;
-
   // Normalize media fields
-  const media = getMediaInfo(movie, mediaType, provider);
-  const isAnilist = provider === "anilist";
-  const isOmdb = provider === "omdb";
+  const media = getMediaInfo(movie || {}, mediaType, effectiveProvider);
   // Composite ID for storage: "movie:550", "tv:1396", "tvmaze:tv:169", "watchmode:tv:3257076", "anilist:tv:16498", "omdb:movie:tt1375666"
-  const compositeId = isOmdb
-    ? `omdb:${media.mediaType}:${media.id}`
-    : isAnilist
-      ? `anilist:${media.mediaType}:${media.id}`
-      : isWatchmode
-        ? `watchmode:${media.mediaType}:${media.id}`
-        : isTvmaze
-          ? `tvmaze:tv:${media.id}`
-          : `${media.mediaType}:${media.id}`;
+  const compositeId = movie?.compositeId || (
+    isOmdb
+      ? `omdb:${media.mediaType}:${media.id}`
+      : isAnilist
+        ? `anilist:${media.mediaType}:${media.id}`
+        : isWatchmode
+          ? `watchmode:${media.mediaType}:${media.id}`
+          : isTvmaze
+            ? `tvmaze:tv:${media.id}`
+            : `${media.mediaType}:${media.id}`
+  );
 
   useEffect(() => {
     userIdRef.current = user?._id;
@@ -434,13 +436,15 @@ export default function MovieCard({ movie: rawMovie, item, mediaType = "movie", 
 
   const badgeIsTV = !isManga && (isTvmaze || mediaType === "tv" || media.mediaType === "tv");
 
+  if (!movie || !movie.id) return null;
+
   return (
     <div
       onMouseEnter={() => {
         if (!hasHovered) setHasHovered(true);
       }}
       className="group relative flex flex-col bg-dark-body2 rounded-xl overflow-hidden border border-white/5 shadow-lg">
-      {/* Media Type Badge */}
+      {/* Media Type & Provider Badge */}
       <div className="absolute top-2.5 left-2.5 z-20 pointer-events-none flex flex-col gap-1.5">
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-black/40 backdrop-blur-md border border-white/20 text-white/90 shadow-md">
           <span
@@ -454,6 +458,25 @@ export default function MovieCard({ movie: rawMovie, item, mediaType = "movie", 
           />
           {badgeLabel}
         </span>
+
+        {/* Source Provider Badge (rendered in multi-provider mode or when item explicitly provides it) */}
+        {(isAllProviders || movie.provider || provider === "all") && (
+          <span
+            className={`inline-flex items-center self-start px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wider backdrop-blur-md border shadow-md ${
+              effectiveProvider === "anilist"
+                ? "bg-sky-950/80 border-sky-500/30 text-sky-300"
+                : effectiveProvider === "tvmaze"
+                  ? "bg-emerald-950/80 border-emerald-500/30 text-emerald-300"
+                  : effectiveProvider === "watchmode"
+                    ? "bg-indigo-950/80 border-indigo-500/30 text-indigo-300"
+                    : effectiveProvider === "omdb"
+                      ? "bg-amber-950/80 border-amber-500/30 text-amber-300"
+                      : "bg-slate-900/80 border-white/20 text-brand"
+            }`}
+          >
+            {effectiveProvider}
+          </span>
+        )}
       </div>
 
       {/* Rating & Critic Score Badges (top right) */}

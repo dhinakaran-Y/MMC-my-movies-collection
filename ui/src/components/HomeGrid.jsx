@@ -16,11 +16,13 @@ export default function HomeGrid({
   displayTotalPages,
   mediaType = "movie",
   provider = "tmdb",
+  providerCounts = null,
 }) {
   const { user } = useAuth();
   const { openModal } = useCollectionModal();
   const searchParams = useSearchParams();
 
+  const isAllProviders = searchParams.get("allProviders") === "true" || provider === "all";
   const [movies, setMovies] = useState(movieArr || []);
   const [totalPages, setTotalPages] = useState(displayTotalPages || 1);
   const [loadingFallback, setLoadingFallback] = useState(false);
@@ -35,6 +37,43 @@ export default function HomeGrid({
   // fetch preferred language movies directly in browser!
   useEffect(() => {
     const activeProvider = searchParams.get("provider") || "tmdb";
+
+    // ── Multi-Provider Search Client-Side Fallback ──
+    if (isAllProviders) {
+      if (movieArr && movieArr.length > 0) {
+        setMovies(movieArr);
+        setTotalPages(displayTotalPages || 1);
+        return;
+      }
+
+      const q = searchParams.get("query");
+      if (!q) {
+        setMovies([]);
+        return;
+      }
+
+      let isMounted = true;
+      setLoadingFallback(true);
+
+      fetch(`/api/search/all?query=${encodeURIComponent(q)}`)
+        .then((res) => (res.ok ? res.json() : { results: [], total_pages: 1 }))
+        .then((data) => {
+          if (!isMounted) return;
+          setMovies(data.results || []);
+          setTotalPages(data.total_pages || 1);
+        })
+        .catch((err) => {
+          console.error("Multi-provider search error:", err);
+          if (isMounted) setMovies([]);
+        })
+        .finally(() => {
+          if (isMounted) setLoadingFallback(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
 
     // ── AniList Client-Side Fallback ──
     if (activeProvider === "anilist") {
@@ -149,7 +188,7 @@ export default function HomeGrid({
       }
       return;
     }
-  }, [movieArr, searchParams, user?.language, mediaType, provider, displayTotalPages]);
+  }, [movieArr, searchParams, user?.language, mediaType, provider, displayTotalPages, isAllProviders]);
 
   const router = useRouter();
   const activeProvider = searchParams.get("provider") || "tmdb";
@@ -174,8 +213,38 @@ export default function HomeGrid({
 
   return (
     <main className="col-span-full lg:col-span-9 lg:h-full lg:overflow-y-auto p-8 custom-scrollbar">
+      {/* Multi-Provider Search Status Header */}
+      {isAllProviders && searchParams.get("query") && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 p-4 bg-gradient-to-r from-brand/15 via-slate-900/80 to-slate-900/90 border border-brand/30 rounded-2xl backdrop-blur-md shadow-lg shadow-brand/5">
+          <div className="flex items-center gap-3">
+            <div className="w-3 h-3 rounded-full bg-brand animate-pulse shadow-[0_0_10px_rgba(229,9,20,0.9)]" />
+            <div className="flex flex-col">
+              <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                Multi-Provider Search Results
+                <span className="text-white/50 font-normal">({movies.length} matches)</span>
+              </span>
+              <span className="text-[11px] text-white/60">
+                Aggregated across TMDB, AniList, TVmaze, Watchmode, and OMDb
+              </span>
+            </div>
+          </div>
+
+          {providerCounts && (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {Object.entries(providerCounts).map(([prov, count]) => (
+                <span
+                  key={prov}
+                  className="px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-black/40 border border-white/15 text-white/80 backdrop-blur-sm">
+                  {prov}: <span className="text-brand font-extrabold">{count}</span>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Top Header Bar with Top-Right Sort Dropdown (Exclusively for AniList) */}
-      {activeProvider === "anilist" && (
+      {activeProvider === "anilist" && !isAllProviders && (
         <div className="flex items-center justify-between mb-6 pb-3 border-b border-white/10">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold text-white/60 uppercase tracking-widest flex items-center gap-2">
@@ -213,9 +282,9 @@ export default function HomeGrid({
         </div>
       )}
 
-      {activeProvider === "omdb" && (searchParams.get("guide") === "imdb_id" || searchParams.get("guide") === "true") ? (
+      {activeProvider === "omdb" && !isAllProviders && (searchParams.get("guide") === "imdb_id" || searchParams.get("guide") === "true") ? (
         <ImdbGuide />
-      ) : activeProvider === "omdb" && !searchParams.get("query") && !searchParams.get("imdbId") ? (
+      ) : activeProvider === "omdb" && !isAllProviders && !searchParams.get("query") && !searchParams.get("imdbId") ? (
         <div className="h-[60vh] flex flex-col items-center justify-center text-center p-6">
           <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mb-4 text-2xl shadow-lg shadow-amber-500/5">
             🎬
@@ -242,10 +311,10 @@ export default function HomeGrid({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
           {movies.map((movie) => (
             <MovieCard
-              key={`${activeProvider}-${movie.id}`}
+              key={movie.compositeId || `${movie.provider || activeProvider}-${movie.id}`}
               movie={movie}
-              mediaType={activeProvider === "tvmaze" ? "tv" : (movie.mediaType || mediaType)}
-              provider={activeProvider}
+              mediaType={movie.mediaType || (activeProvider === "tvmaze" ? "tv" : mediaType)}
+              provider={movie.provider || activeProvider}
             />
           ))}
         </div>

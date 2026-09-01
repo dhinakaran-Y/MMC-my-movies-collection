@@ -24,6 +24,7 @@ import {
   getTags as anilistTags,
 } from "@/lib/providers/anilistAdapter";
 import { searchMedia as omdbSearch } from "@/lib/providers/omdbAdapter";
+import { searchAllProviders } from "@/lib/providers/multiProviderSearch";
 import { tmdbFetch } from "@/lib/providers/tmdbFetch";
 
 const API_KEY = process.env.TMDB_API_KEY || "3472ccb0d97ebc192cbd0e56bd799736";
@@ -255,6 +256,37 @@ export default async function Home({ searchParams }) {
 
   const provider = params.provider || "tmdb";
   const currentPage = Number(params.page) || 1;
+
+  // ── Multi-Provider Search (All Providers Aggregated) ──
+  if (params.allProviders === "true" && params.query) {
+    const [allData, languagesArr, genresArr] = await Promise.all([
+      searchAllProviders(params.query),
+      getLanguages(),
+      getGenres(params.type === "tv" ? "tv" : "movie"),
+    ]);
+
+    return (
+      <div className="lg:h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
+        <AsideFilter
+          genresArr={genresArr}
+          currentLang={params.lang || ""}
+          currentGenre={params.genre || ""}
+          currentQuery={params.query || ""}
+          currentType={params.type || "movie"}
+          provider={provider}
+        />
+
+        <HomeGrid
+          movieArr={allData.results || []}
+          currentPage={currentPage}
+          displayTotalPages={allData.total_pages || 1}
+          mediaType={params.type === "tv" ? "tv" : "movie"}
+          provider="all"
+          providerCounts={allData.providerCounts}
+        />
+      </div>
+    );
+  }
 
   // ── AniList Provider ──
   if (provider === "anilist") {

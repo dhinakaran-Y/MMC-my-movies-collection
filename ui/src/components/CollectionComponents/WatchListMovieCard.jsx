@@ -75,6 +75,8 @@ async function fetchUserData(userId) {
 export default function WatchListMovieCard({ movie }) {
   const [state, dispatch] = useReducer(reducer, initialState);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [loadingColId, setLoadingColId] = useState(null);
+  const [isWatchedLoading, setIsWatchedLoading] = useState(false);
 
   const isCustom = movie.isCustom || (typeof movie.storedId === "string" && movie.storedId.startsWith("custom:"));
   const isTvmaze = movie.provider === "tvmaze" || (typeof movie.storedId === "string" && movie.storedId.startsWith("tvmaze:"));
@@ -203,13 +205,35 @@ export default function WatchListMovieCard({ movie }) {
         ownerId: user._id,
         collectionName: formData.collectionName,
         visibility: formData.visibility,
+        movieId: compositeId,
       }),
     });
-    if (res.ok) await reload();
+    const data = await res.json();
+    if (!res.ok) {
+      return { error: data.error || "Failed to create collection" };
+    }
+
+    if (
+      data?.data?._id &&
+      (!data.data.moviesList || !data.data.moviesList.includes(compositeId))
+    ) {
+      await fetch(`/api/add-movie`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          collectionId: data.data._id,
+          movieId: compositeId,
+        }),
+      });
+    }
+    await reload();
+    return { success: true };
   };
 
   const handleToggleWatched = async () => {
-    if (!user?._id) return;
+    if (!user?._id || isWatchedLoading) return;
+    setIsWatchedLoading(true);
     const isWatched = checkIsWatched();
     const endpoint = isWatched ? `/api/remove-watched` : `/api/add-watched`;
 
@@ -219,40 +243,56 @@ export default function WatchListMovieCard({ movie }) {
     );
     const targetMovieId = storedMatch || compositeId;
 
-    const res = await fetch(endpoint, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ ownerId: user._id, movieId: targetMovieId }),
-    });
-    if (res.ok) {
-      await reload();
-      router.refresh();
+    try {
+      const res = await fetch(endpoint, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ ownerId: user._id, movieId: targetMovieId }),
+      });
+      if (res.ok) {
+        await reload();
+        router.refresh();
+      }
+    } catch (err) {
+      console.error("Failed to toggle watched:", err);
+    } finally {
+      setIsWatchedLoading(false);
     }
   };
 
   const handleToggleCollection = async (collection) => {
+    if (loadingColId) return;
     const isAdded = checkIsAddedToCol(collection);
     const endpoint = isAdded ? `/api/remove-movie` : `/api/add-movie`;
 
     if (isAdded && !confirm(`Are you sure you want to remove this ${mediaType === "tv" ? "TV show" : "movie"}?`))
       return;
 
-    const storedMatch = (collection.moviesList || []).find(
-      (id) => id === compositeId || id === rawId || id === `movie:${rawId}` || id === `tv:${rawId}`
-    );
-    const targetMovieId = storedMatch || compositeId;
+    setLoadingColId(collection._id);
+    try {
+      const storedMatch = (collection.moviesList || []).find(
+        (id) => id === compositeId || id === rawId || id === `movie:${rawId}` || id === `tv:${rawId}`
+      );
+      const targetMovieId = storedMatch || compositeId;
 
-    await fetch(endpoint, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        collectionId: collection._id,
-        movieId: targetMovieId,
-      }),
-    });
-    await reload();
+      const res = await fetch(endpoint, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          collectionId: collection._id,
+          movieId: targetMovieId,
+        }),
+      });
+      if (res.ok) {
+        await reload();
+      }
+    } catch (err) {
+      console.error("Failed to toggle collection:", err);
+    } finally {
+      setLoadingColId(null);
+    }
   };
 
   const isWatched = checkIsWatched();
@@ -431,8 +471,31 @@ export default function WatchListMovieCard({ movie }) {
           <div className="w-full grid grid-cols-2 gap-2 mt-auto shrink-0 pt-1">
             <button
               onClick={handleToggleWatched}
-              className={`${isWatched ? "bg-green-600/80 hover:bg-green-600" : "bg-red-600/80 hover:bg-red-600"} rounded py-2 text-xs font-semibold text-white transition-colors`}>
-              {isWatched ? "Watched ✓" : "Watch"}
+              disabled={isWatchedLoading}
+              className={`${isWatched ? "bg-green-600/80 hover:bg-green-600" : "bg-red-600/80 hover:bg-red-600"} rounded py-2 text-xs font-semibold text-white transition-colors flex items-center justify-center gap-1.5 disabled:opacity-60`}>
+              {isWatchedLoading ? (
+                <svg
+                  className="animate-spin h-3.5 w-3.5 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+              ) : isWatched ? (
+                "Watched ✓"
+              ) : (
+                "Watch"
+              )}
             </button>
 
             <div className="relative">
@@ -443,7 +506,7 @@ export default function WatchListMovieCard({ movie }) {
               </button>
 
               {showDropdown && (
-                <div className="absolute bottom-full mb-2 right-0 w-44 max-h-48 overflow-y-auto bg-dark-body2 border border-white/10 rounded-xl shadow-2xl p-2 z-50">
+                <div className="absolute bottom-full mb-2 right-0 w-44 max-h-48 overflow-y-auto bg-dark-body2 border border-white/10 rounded-xl shadow-2xl p-2 z-50 scroll-bar-hide">
                   <button
                     onClick={() => {
                       setShowDropdown(false);
@@ -452,22 +515,54 @@ export default function WatchListMovieCard({ movie }) {
                     className="w-full text-left px-3 py-2 text-brand font-bold text-xs border-b border-white/10 mb-1 hover:bg-brand/10 rounded transition-colors">
                     + Create New
                   </button>
-                  {state.myCollections.map((col) => {
-                    const isAdded = checkIsAddedToCol(col);
-                    return (
-                      <button
-                        key={col._id}
-                        onClick={() => handleToggleCollection(col)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors hover:bg-white/5 ${
-                          isAdded
-                            ? "text-yellow-500 font-semibold"
-                            : "text-white"
-                        }`}>
-                        <span className="truncate inline-block max-w-[85%] align-middle">{col.collectionName}</span>
-                        {isAdded && <span className="float-right">✓</span>}
-                      </button>
-                    );
-                  })}
+                  {state.myCollections.length === 0 ? (
+                    <div className="px-3 py-2 text-[11px] text-white/40 italic text-center">
+                      No collections yet
+                    </div>
+                  ) : (
+                    state.myCollections.map((col) => {
+                      const isAdded = checkIsAddedToCol(col);
+                      const isLoadingThis = loadingColId === col._id;
+                      return (
+                        <button
+                          key={col._id}
+                          disabled={loadingColId !== null}
+                          onClick={() => handleToggleCollection(col)}
+                          className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-colors flex items-center justify-between ${
+                            loadingColId !== null && !isLoadingThis
+                              ? "opacity-50 cursor-not-allowed"
+                              : "hover:bg-white/5 cursor-pointer"
+                          } ${
+                            isAdded
+                              ? "text-yellow-500 font-semibold"
+                              : "text-white"
+                          }`}>
+                          <span className="truncate max-w-[80%]">{col.collectionName}</span>
+                          {isLoadingThis ? (
+                            <svg
+                              className="animate-spin h-3.5 w-3.5 text-brand shrink-0"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24">
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                          ) : isAdded ? (
+                            <span className="shrink-0 font-bold">✓</span>
+                          ) : null}
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               )}
             </div>

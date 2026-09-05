@@ -75,11 +75,15 @@ export default function CollectionGrid() {
       }),
     });
 
-    if (res.ok) {
-      setIsOpen(false);
-      setEditingData(null);
-      loadGridData();
+    const result = await res.json();
+    if (!res.ok) {
+      return { error: result.error || "Failed to save collection" };
     }
+
+    setIsOpen(false);
+    setEditingData(null);
+    loadGridData();
+    return { success: true };
   };
 
   // 4. Delete Handler

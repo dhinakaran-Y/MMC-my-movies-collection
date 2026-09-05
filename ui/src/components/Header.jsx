@@ -7,16 +7,16 @@ import { useAuth } from "./context/AuthContext";
 import { useState } from "react";
 
 function getUserInitials(name) {
-  if (!name || typeof name !== "string") return "G";
+  if (!name || typeof name !== "string") return "U";
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "G";
+  if (parts.length === 0) return "U";
   if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
   return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
 }
 
 export default function Header() {
   const path = usePathname();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
@@ -56,40 +56,59 @@ export default function Header() {
                   Collection
                 </Link>
                 {user.role === "admin" && (
-                <Link
-                  href={"/admin"}
-                  className={path === "/admin" ? "text-brand" : "text-white"}>
-                  Dashboard
-                </Link>
+                  <Link
+                    href={"/admin"}
+                    className={path === "/admin" ? "text-brand" : "text-white"}>
+                    Dashboard
+                  </Link>
                 )}
               </>
             )}
             <Link
               href={"/about"}
-              className={path === "/about" || path === "/why" ? "text-brand" : "text-white"}>
+              className={
+                path === "/about" || path === "/why" ? "text-brand" : "text-white"
+              }>
               About
             </Link>
           </div>
         </nav>
 
-        {/* Right side - mobile*/}
-        <div className="flex items-center gap-4">
-          <Link href={"/profile"}>
-            {user?.profileImage ? (
-              <Image
-                src={user.profileImage}
-                alt={user?.name || "Profile"}
-                width={36}
-                height={36}
-                className="w-9 h-9 rounded-full object-cover border border-white/20 shadow hover:scale-105 transition-transform"
-                unoptimized
-              />
-            ) : (
-              <div className="w-9 h-9 rounded-full bg-brand shadow flex justify-center items-center font-bold text-white text-xs tracking-wider hover:scale-105 transition-transform">
-                {getUserInitials(user?.name)}
-              </div>
-            )}
-          </Link>
+        {/* Right side - Profile or Guest Auth */}
+        <div className="flex items-center gap-3">
+          {loading ? (
+            <div className="w-9 h-9 rounded-full bg-white/10 animate-pulse" />
+          ) : user ? (
+            <Link href={"/profile"} aria-label="Profile">
+              {user?.profileImage ? (
+                <Image
+                  src={user.profileImage}
+                  alt={user?.name || "Profile"}
+                  width={36}
+                  height={36}
+                  className="w-9 h-9 rounded-full object-cover border border-white/20 shadow hover:scale-105 transition-transform"
+                  unoptimized
+                />
+              ) : (
+                <div className="w-9 h-9 rounded-full bg-brand shadow flex justify-center items-center font-bold text-white text-xs tracking-wider hover:scale-105 transition-transform">
+                  {getUserInitials(user?.name)}
+                </div>
+              )}
+            </Link>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/login"
+                className="text-xs sm:text-sm font-semibold text-white/80 hover:text-white px-2.5 sm:px-3.5 py-1.5 rounded-lg hover:bg-white/10 transition-colors">
+                Login
+              </Link>
+              <Link
+                href="/register"
+                className="text-xs sm:text-sm font-semibold text-white bg-brand hover:bg-red-700 px-3 sm:px-3.5 py-1.5 rounded-lg shadow-md shadow-brand/20 active:scale-95 transition-all">
+                Sign Up
+              </Link>
+            </div>
+          )}
 
           {/* Hamburger Button*/}
           <button onClick={toggleMenu} className="md:hidden p-2 text-white">
@@ -112,14 +131,14 @@ export default function Header() {
       {/* Mobile Navigation Menu */}
       {isMenuOpen && (
         <div className="md:hidden bg-dark-body1 border-t border-white/10 mt-2 p-4 flex flex-col space-y-4 font-semibold">
+          <Link
+            href={"/"}
+            onClick={toggleMenu}
+            className={path === "/" ? "text-brand" : "text-white"}>
+            Home
+          </Link>
           {user && (
             <>
-              <Link
-                href={"/"}
-                onClick={toggleMenu}
-                className={path === "/" ? "text-brand" : "text-white"}>
-                Home
-              </Link>
               <Link
                 href={"/collections"}
                 onClick={toggleMenu}
@@ -141,9 +160,28 @@ export default function Header() {
           <Link
             href={"/about"}
             onClick={toggleMenu}
-            className={path === "/about" || path === "/why" ? "text-brand" : "text-white"}>
+            className={
+              path === "/about" || path === "/why" ? "text-brand" : "text-white"
+            }>
             About
           </Link>
+
+          {!loading && !user && (
+            <div className="flex flex-col gap-2 pt-3 border-t border-white/10">
+              <Link
+                href="/login"
+                onClick={toggleMenu}
+                className="text-center py-2 px-4 rounded-lg border border-white/20 text-white hover:bg-white/10 transition-colors text-sm">
+                Login
+              </Link>
+              <Link
+                href="/register"
+                onClick={toggleMenu}
+                className="text-center py-2 px-4 rounded-lg bg-brand hover:bg-red-700 text-white font-medium transition-colors text-sm shadow-md shadow-brand/20">
+                Sign Up
+              </Link>
+            </div>
+          )}
         </div>
       )}
     </header>

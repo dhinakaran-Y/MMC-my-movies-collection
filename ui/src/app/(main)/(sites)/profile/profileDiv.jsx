@@ -74,7 +74,14 @@ export default function ProfileDiv() {
     }
   };
 
-  if (loading) {
+  // Redirect guests to login
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace("/login");
+    }
+  }, [loading, user, router]);
+
+  if (loading || !user) {
     return (
       <div className="h-[80vh] w-screen flex justify-center items-center">
         <p className="text-white">Loading...</p>

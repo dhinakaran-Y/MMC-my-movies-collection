@@ -4,26 +4,41 @@ import mongoose from "mongoose";
 // 1.create a new collection
 
 export async function createCollection(req, res) {
-  const { ownerId, collectionName, visibility } = req.body;
+  const { ownerId, collectionName, visibility, movieId, moviesList } = req.body;
 
   try {
-    // 1. Check if a collection with this name already exists for this ownerId
+    const trimmedName = collectionName?.trim();
+    if (!trimmedName) {
+      return res.status(400).json({
+        error: "Collection name is required.",
+      });
+    }
+
+    // 1. Check if a collection with this name already exists for this ownerId (case-insensitive across public & private)
+    const escapedName = trimmedName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const existing = await Collection.findOne({
       ownerId: ownerId,
-      collectionName: collectionName,
+      collectionName: { $regex: new RegExp(`^${escapedName}$`, "i") },
     });
 
     if (existing) {
       return res.status(400).json({
-        error: `A collection named '${collectionName}' already exists.`,
+        error: `A collection named '${existing.collectionName}' already exists.`,
       });
+    }
+
+    let initialMovies = [];
+    if (Array.isArray(moviesList)) {
+      initialMovies = moviesList;
+    } else if (movieId) {
+      initialMovies = [movieId];
     }
 
     // 2. Prepare the new collection document
     const newCollection = new Collection({
       ownerId: ownerId,
-      collectionName: collectionName,
-      moviesList: [],
+      collectionName: trimmedName,
+      moviesList: initialMovies,
       visibility: visibility || "private",
     });
 
@@ -84,20 +99,37 @@ export async function updateCollection(req, res) {
   const { collectionName, visibility } = req.body;
 
   try {
+    const currentDoc = await Collection.findById(id);
+    if (!currentDoc) {
+      return res.status(404).json({ error: "Collection not found." });
+    }
+
+    const trimmedName = collectionName?.trim();
+    if (trimmedName) {
+      const escapedName = trimmedName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const existing = await Collection.findOne({
+        _id: { $ne: id },
+        ownerId: currentDoc.ownerId,
+        collectionName: { $regex: new RegExp(`^${escapedName}$`, "i") },
+      });
+
+      if (existing) {
+        return res.status(400).json({
+          error: `A collection named '${existing.collectionName}' already exists.`,
+        });
+      }
+    }
+
     const updatedDoc = await Collection.findByIdAndUpdate(
       id,
       {
         $set: {
-          collectionName: collectionName,
-          visibility: visibility,
+          collectionName: trimmedName || currentDoc.collectionName,
+          visibility: visibility || currentDoc.visibility,
         },
       },
       { returnDocument: 'after' },
     );
-
-    if (!updatedDoc) {
-      return res.status(404).json({ message: "Collection not found." });
-    }
 
     return res.status(200).json({
       message: "Updated successfully",

@@ -5,6 +5,7 @@ import {
   logoutUser,
   registerUser,
 } from "#controllers/authControllers";
+import { googleLogin } from "#controllers/googleAuthController";
 import validateBody from "#middleware/zod-validate";
 import { loginSchema, registerSchema } from "#schemas/authSchema";
 import { authMiddleware } from "#middleware/auth";
@@ -22,5 +23,8 @@ router.get("/me", authMiddleware, getCurrentUser);
 
 // logout
 router.post("/logout", logoutUser);
+
+// google login
+router.post("/google-login", googleLogin);
 
 export default router;

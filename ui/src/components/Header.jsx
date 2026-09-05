@@ -18,6 +18,7 @@ export default function Header() {
   const path = usePathname();
   const { user, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -80,7 +81,7 @@ export default function Header() {
             <div className="w-9 h-9 rounded-full bg-white/10 animate-pulse" />
           ) : user ? (
             <Link href={"/profile"} aria-label="Profile">
-              {user?.profileImage ? (
+              {!imageError && user?.profileImage ? (
                 <Image
                   src={user.profileImage}
                   alt={user?.name || "Profile"}
@@ -88,6 +89,8 @@ export default function Header() {
                   height={36}
                   className="w-9 h-9 rounded-full object-cover border border-white/20 shadow hover:scale-105 transition-transform"
                   unoptimized
+                  referrerPolicy="no-referrer"
+                  onError={() => setImageError(true)}
                 />
               ) : (
                 <div className="w-9 h-9 rounded-full bg-brand shadow flex justify-center items-center font-bold text-white text-xs tracking-wider hover:scale-105 transition-transform">

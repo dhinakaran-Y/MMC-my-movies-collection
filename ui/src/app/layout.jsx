@@ -24,6 +24,7 @@ export const metadata = {
   },
   description:
     "My Movies Collection, A Digital Movies Library are Movies watch list storing website.",
+  referrer: "no-referrer",
 };
 
 export default function RootLayout({ children }) {

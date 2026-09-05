@@ -6,6 +6,14 @@ import { useAuth } from "@/components/context/AuthContext";
 import UserEditForm from "@/components/profile/UserEditForm";
 import { useRouter } from "next/navigation";
 
+function getUserInitials(name) {
+  if (!name || typeof name !== "string") return "U";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "U";
+  if (parts.length === 1) return parts[0].charAt(0).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
 export default function ProfileDiv() {
   const { user, loading, logout, setUser } = useAuth();
   const router = useRouter();
@@ -17,6 +25,11 @@ export default function ProfileDiv() {
 
   // State for Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [user?.profileImage]);
 
   // Fetch Stats
   useEffect(() => {
@@ -61,10 +74,13 @@ export default function ProfileDiv() {
         if (typeof window !== "undefined") {
           sessionStorage.removeItem("mmc_home_filters");
         }
-        setUser((prev) => ({
-          ...prev,
-          ...data,
-        }));
+        setUser((prev) => {
+          const updated = { ...prev, ...data };
+          if (prev?.authProvider === "google") {
+            updated.email = prev.email;
+          }
+          return updated;
+        });
         alert("Profile updated successfully!");
       } else {
         throw new Error(res.status, res.json);
@@ -95,15 +111,23 @@ export default function ProfileDiv() {
         {/* Profile img */}
         <div className="flex flex-col items-center text-center">
           <div className="relative">
-            <Image
-              className="rounded-full p-1 shadow-lg shadow-brand/10 object-cover w-35 h-35"
-              src={user?.profileImage || "/profile-img.png"}
-              alt="Profile Avatar"
-              width={140}
-              height={140}
-              priority
-              unoptimized
-            />
+            {!imageError && user?.profileImage ? (
+              <Image
+                className="rounded-full p-1 shadow-lg shadow-brand/10 object-cover w-35 h-35"
+                src={user.profileImage}
+                alt="Profile Avatar"
+                width={140}
+                height={140}
+                priority
+                unoptimized
+                referrerPolicy="no-referrer"
+                onError={() => setImageError(true)}
+              />
+            ) : (
+              <div className="w-35 h-35 rounded-full bg-brand shadow-lg shadow-brand/20 flex justify-center items-center font-bold text-white text-4xl tracking-wider border-2 border-white/10">
+                {getUserInitials(user?.name)}
+              </div>
+            )}
             {/* Edit Trigger - You can put this here or near the name */}
             <div
               onClick={() => setIsModalOpen(true)}

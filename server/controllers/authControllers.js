@@ -13,7 +13,14 @@ export async function registerUser(req, res) {
   const { name, email, password } = req.validateBody;
   try {
     const normalizedEmail = email.trim().toLowerCase();
-    const existing = await User.findOne({ email: { $regex: new RegExp(`^${normalizedEmail}$`, "i") } });
+    const existing = await User.findOne({
+      email: { $regex: new RegExp(`^${normalizedEmail}$`, "i") },
+      $or: [
+        { authProvider: "local" },
+        { authProvider: { $exists: false } },
+        { authProvider: null },
+      ],
+    });
     if (existing) {
       return res.status(400).json({ error: "An account with this email already exists." });
     }
@@ -22,6 +29,7 @@ export async function registerUser(req, res) {
       name: name.trim(),
       email: normalizedEmail,
       password: bcrypt.hashSync(password, 10),
+      authProvider: "local",
     });
 
     const createdUser = await user.save();
@@ -49,10 +57,20 @@ export async function loginUser(req, res) {
     const normalizedEmail = email.trim().toLowerCase();
     const user = await User.findOne({
       email: { $regex: new RegExp(`^${normalizedEmail}$`, "i") },
+      $or: [
+        { authProvider: "local" },
+        { authProvider: { $exists: false } },
+        { authProvider: null },
+      ],
     });
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
+    }
+
+    // Safety guard: skip if somehow a passwordless user is found
+    if (!user.password) {
+      return res.status(400).json({ error: "Invalid login method for this account." });
     }
 
     const isPasswordValid = bcrypt.compareSync(password, user.password);
@@ -63,7 +81,7 @@ export async function loginUser(req, res) {
 
     // i have that user info
     const token = jwt.sign(
-      { id: user._id, email: user.email, role: user.role },
+      { id: user._id, email: user.email, role: user.role, authProvider: "local" },
       process.env.JWT_SECRET,
       { expiresIn: "30d" },
     );

@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import User from "#models/user.model";
 
-export function authMiddleware(req, res, next) {
+export async function authMiddleware(req, res, next) {
   // Try Authorization header first (Bearer token)
   const authHeader = req.headers.authorization;
   const bearerToken = authHeader?.startsWith("Bearer")
@@ -36,6 +37,11 @@ export function authMiddleware(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // Fetch live role from DB so role promotions/changes take effect immediately
+    const userDoc = await User.findById(decoded.id, { role: 1 });
+    if (userDoc) {
+      decoded.role = userDoc.role;
+    }
     req.user = decoded;
     next();
   } catch (error) {

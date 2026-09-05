@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 const schema = z
   .object({
@@ -396,6 +397,19 @@ export default function RegisterDiv() {
           )}
         </button>
       </form>
+
+      {/* Or divider */}
+      <div className="relative my-8">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-white/10"></div>
+        </div>
+        <div className="relative flex justify-center text-xs uppercase">
+          <span className="bg-dark-body2 px-2 text-white/40">Or</span>
+        </div>
+      </div>
+
+      {/* Google sign up */}
+      <GoogleSignInButton label="Sign up with Google" />
 
       <div className="mt-8 pt-6 border-t border-white/5 text-center">
         <p className="text-white/40 text-sm">

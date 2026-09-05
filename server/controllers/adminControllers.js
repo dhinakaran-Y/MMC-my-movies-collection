@@ -5,7 +5,7 @@ import WatchList from "#models/watchList.model";
 
 export async function userList(req, res) {
   try {
-    const userArr = await User.find();
+    const userArr = await User.find({}, { password: 0 });
     res.json(userArr);
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -14,8 +14,23 @@ export async function userList(req, res) {
 }
 
 export async function totalUsers(req, res) {
-  const count = await User.countDocuments();
-  res.json({ count });
+  try {
+    const [count, googleCount, localCount] = await Promise.all([
+      User.countDocuments(),
+      User.countDocuments({ authProvider: "google" }),
+      User.countDocuments({
+        $or: [
+          { authProvider: "local" },
+          { authProvider: { $exists: false } },
+          { authProvider: null },
+        ],
+      }),
+    ]);
+    res.json({ count, googleCount, localCount });
+  } catch (error) {
+    console.error("Error fetching total users:", error);
+    res.status(500).json({ error: "Failed to fetch user count" });
+  }
 }
 
 export async function totalWatchedMovies(req, res) {
@@ -90,7 +105,39 @@ export async function updateMyAccount(req, res) {
   const { name, email, password, language, profileImage, region, watchOption } = req.body;
 
   try {
-    const updateData = { name, email };
+    const user = await User.findById(id);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const updateData = {};
+    if (name) updateData.name = name.trim();
+
+    // Google accounts cannot modify email or password
+    if (user.authProvider !== "google") {
+      if (email && email.trim().toLowerCase() !== user.email) {
+        const normalizedEmail = email.trim().toLowerCase();
+        const conflict = await User.findOne({
+          _id: { $ne: id },
+          email: { $regex: new RegExp(`^${normalizedEmail}$`, "i") },
+          $or: [
+            { authProvider: "local" },
+            { authProvider: { $exists: false } },
+            { authProvider: null },
+          ],
+        });
+        if (conflict) {
+          return res.status(400).json({ error: "An account with this email already exists." });
+        }
+        updateData.email = normalizedEmail;
+      }
+
+      // Only hash and update password if it's provided
+      if (password && password.trim() !== "") {
+        updateData.password = bcrypt.hashSync(password, 10);
+      }
+    }
+
     if (language !== undefined) {
       updateData.language = language;
     }
@@ -103,14 +150,11 @@ export async function updateMyAccount(req, res) {
     if (profileImage !== undefined) {
       updateData.profileImage = profileImage;
     }
-    // Only hash and update password if it's provided
-    if (password && password.trim() !== "") {
-      updateData.password = bcrypt.hashSync(password, 10);
-    }
     
     await User.findByIdAndUpdate(id, updateData);
     res.json({ message: "Profile updated" });
   } catch (error) {
+    console.error("Error updating profile:", error);
     res.status(500).json({ error: "Failed to update profile" });
   }
 }

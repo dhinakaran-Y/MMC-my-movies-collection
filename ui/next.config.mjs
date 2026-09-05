@@ -60,6 +60,24 @@ const nextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.googleusercontent.com",
+        port: "",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "ui-avatars.com",
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
   async rewrites() {
@@ -71,6 +89,7 @@ const nextConfig = {
         { source: "/api/anilist/:path*", destination: "/api/anilist/:path*" },
         { source: "/api/tvmaze/:path*", destination: "/api/tvmaze/:path*" },
         { source: "/api/watchmode/:path*", destination: "/api/watchmode/:path*" },
+        { source: "/api/auth/:path*", destination: "/api/auth/:path*" },
       ],
       afterFiles: [
         {

@@ -5,9 +5,10 @@ import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/components/context/AuthContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import GoogleSignInButton from "@/components/GoogleSignInButton";
 
 const schema = z.object({
   email: z.string().email("Invalid email address"),
@@ -63,9 +64,22 @@ function FieldError({ message }) {
 export default function LoginDiv() {
   const { login } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Handle Google auth error from redirect
+  useEffect(() => {
+    const error = searchParams.get("error");
+    if (error === "google_denied") {
+      setServerError("Google sign-in was cancelled.");
+    } else if (error === "google_failed" || error === "server_error") {
+      setServerError("Google sign-in failed. Please try again.");
+    } else if (error === "no_code") {
+      setServerError("Google sign-in did not return an authorization code.");
+    }
+  }, [searchParams]);
 
   const {
     register,
@@ -371,10 +385,13 @@ export default function LoginDiv() {
         </div>
       </div>
 
+      {/* Google login */}
+      <GoogleSignInButton label="Sign in with Google" />
+
       {/* guest login */}
       <Link
         href={"/"}
-        className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white py-3 rounded-xl transition-all">
+        className="w-full flex items-center justify-center gap-3 bg-white/5 hover:bg-white/10 border border-white/10 text-white/60 py-3 rounded-xl transition-all mt-3 text-sm">
         Continue as Guest
       </Link>
 

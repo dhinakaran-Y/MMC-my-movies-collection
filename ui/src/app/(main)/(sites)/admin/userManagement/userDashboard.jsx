@@ -21,7 +21,12 @@ export function UserDashboard() {
         fetch(`/api/all-watchList`, { credentials: "include" }),
       ]);
 
-      if (!userRes.ok) throw new Error("Auth failed");
+      if (!userRes.ok) {
+        const errData = await userRes.json().catch(() => ({}));
+        console.warn(`[UserDashboard] Fetch /api/users returned status ${userRes.status}:`, errData);
+        setIsDataLoading(false);
+        return;
+      }
 
       const userData = await userRes.json();
       const colData = await colRes.json();
@@ -81,6 +86,7 @@ export function UserDashboard() {
               <th className="px-6 py-4 text-center">S.no</th>
               <th className="px-6 py-4">Name</th>
               <th className="px-6 py-4">Email</th>
+              <th className="px-6 py-4 text-center">Account Type</th>
               <th className="px-6 py-4">Role</th>
               <th className="px-6 py-4 text-center">Collections</th>
               <th className="px-6 py-4 text-center">Watched Movies</th>

@@ -1,2 +1,4 @@
 /node_modules
-/upcomming-features.md
+/upcomming-features.md.env
+server/.env
+ui/.env

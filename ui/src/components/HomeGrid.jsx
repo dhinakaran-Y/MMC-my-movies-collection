@@ -7,8 +7,17 @@ import { useEffect, useState } from "react";
 import MovieCard from "./MovieCard";
 import Pagination from "./Pagination";
 import ImdbGuide from "./ImdbGuide";
+import FilteredLanguagesArr from "@/data/FilteredLanguagesArr.json";
 const API_KEY = "3472ccb0d97ebc192cbd0e56bd799736";
 const BASE_URL = "https://api.themoviedb.org/3";
+
+const getUserTvmazeLang = (code) => {
+  if (!code || code === "all") return "";
+  const langObj = FilteredLanguagesArr.find(
+    (l) => l.language.toLowerCase() === code.toLowerCase()
+  );
+  return langObj?.languageName || code;
+};
 
 export default function HomeGrid({
   movieArr,
@@ -17,6 +26,7 @@ export default function HomeGrid({
   mediaType = "movie",
   provider = "tmdb",
   providerCounts = null,
+  initialLang = "",
 }) {
   const { user } = useAuth();
   const { openModal } = useCollectionModal();
@@ -109,35 +119,47 @@ export default function HomeGrid({
 
     // ── Watchmode Client-Side Fallback ──
     if (activeProvider === "watchmode") {
+      const preferredLang = user?.language || "";
+      const shouldApplyPreferred =
+        !searchParams.has("lang") &&
+        preferredLang &&
+        initialLang !== preferredLang;
+
+      if (shouldApplyPreferred || !movieArr || movieArr.length === 0) {
+        let isMounted = true;
+        setLoadingFallback(true);
+
+        const qs = new URLSearchParams(searchParams.toString());
+        if (shouldApplyPreferred) {
+          qs.set("lang", preferredLang);
+        }
+        fetch(`/api/watchmode/titles?${qs.toString()}`)
+          .then((res) => (res.ok ? res.json() : { results: [], total_pages: 1 }))
+          .then((data) => {
+            if (!isMounted) return;
+            setMovies(data.results || []);
+            setTotalPages(data.total_pages || 1);
+          })
+          .catch((err) => {
+            console.error("Watchmode client fallback error:", err);
+            if (isMounted) setMovies(movieArr || []);
+          })
+          .finally(() => {
+            if (isMounted) setLoadingFallback(false);
+          });
+
+        return () => {
+          isMounted = false;
+        };
+      }
+
       if (movieArr && movieArr.length > 0) {
         setMovies(movieArr);
         setTotalPages(displayTotalPages || 1);
         return;
       }
-
-      let isMounted = true;
-      setLoadingFallback(true);
-
-      const qs = new URLSearchParams(searchParams.toString());
-      fetch(`/api/watchmode/titles?${qs.toString()}`)
-        .then((res) => (res.ok ? res.json() : { results: [], total_pages: 1 }))
-        .then((data) => {
-          if (!isMounted) return;
-          setMovies(data.results || []);
-          setTotalPages(data.total_pages || 1);
-        })
-        .catch((err) => {
-          console.error("Watchmode client fallback error:", err);
-          if (isMounted) setMovies([]);
-        })
-        .finally(() => {
-          if (isMounted) setLoadingFallback(false);
-        });
-
-      return () => {
-        isMounted = false;
-      };
     }
+
     // ── OMDb: SSR-only, no client-side fallback needed ──
     if (activeProvider === "omdb") {
       if (movieArr && movieArr.length > 0) {
@@ -149,46 +171,92 @@ export default function HomeGrid({
 
     // ── TVmaze Client-Side Fallback ──
     if (activeProvider === "tvmaze") {
+      const userTvmazeLang = getUserTvmazeLang(user?.language);
+      const shouldApplyPreferred =
+        !searchParams.has("lang") &&
+        userTvmazeLang &&
+        initialLang !== userTvmazeLang;
+
+      if (shouldApplyPreferred || !movieArr || movieArr.length === 0) {
+        let isMounted = true;
+        setLoadingFallback(true);
+
+        const qs = new URLSearchParams(searchParams.toString());
+        if (shouldApplyPreferred) {
+          qs.set("lang", userTvmazeLang);
+        }
+        fetch(`/api/tvmaze/shows?${qs.toString()}`)
+          .then((res) => (res.ok ? res.json() : { results: [], total_pages: 1 }))
+          .then((data) => {
+            if (!isMounted) return;
+            setMovies(data.results || []);
+            setTotalPages(data.total_pages || 1);
+          })
+          .catch((err) => {
+            console.error("TVmaze client fallback error:", err);
+            if (isMounted) setMovies(movieArr || []);
+          })
+          .finally(() => {
+            if (isMounted) setLoadingFallback(false);
+          });
+
+        return () => {
+          isMounted = false;
+        };
+      }
+
       // If SSR already provided movies, use them directly!
       if (movieArr && movieArr.length > 0) {
         setMovies(movieArr);
         setTotalPages(displayTotalPages || 1);
         return;
       }
-
-      let isMounted = true;
-      setLoadingFallback(true);
-
-      const qs = new URLSearchParams(searchParams.toString());
-      fetch(`/api/tvmaze/shows?${qs.toString()}`)
-        .then((res) => (res.ok ? res.json() : { results: [], total_pages: 1 }))
-        .then((data) => {
-          if (!isMounted) return;
-          setMovies(data.results || []);
-          setTotalPages(data.total_pages || 1);
-        })
-        .catch((err) => {
-          console.error("TVmaze client fallback error:", err);
-          if (isMounted) setMovies([]);
-        })
-        .finally(() => {
-          if (isMounted) setLoadingFallback(false);
-        });
-
-      return () => {
-        isMounted = false;
-      };
     }
 
-    // ── TMDB: SSR provides movieArr directly (server-side fetched with retry) ──
+    // ── TMDB: SSR provides movieArr directly, or fallback to user preferred language ──
     if (activeProvider === "tmdb" || !activeProvider) {
+      const preferredLang = user?.language || "";
+      const shouldApplyPreferred =
+        !searchParams.has("lang") &&
+        preferredLang &&
+        initialLang !== preferredLang;
+
+      if (shouldApplyPreferred) {
+        let isMounted = true;
+        setLoadingFallback(true);
+
+        const qs = new URLSearchParams(searchParams.toString());
+        qs.set("lang", preferredLang);
+        if (!qs.has("type") && mediaType) qs.set("type", mediaType);
+        if (!qs.has("page") && currentPage) qs.set("page", String(currentPage));
+
+        fetch(`/api/tmdb/discover?${qs.toString()}`)
+          .then((res) => (res.ok ? res.json() : { results: [], total_pages: 1 }))
+          .then((data) => {
+            if (!isMounted) return;
+            setMovies(data.results || []);
+            setTotalPages(data.total_pages || 1);
+          })
+          .catch((err) => {
+            console.error("TMDB preferred language fallback error:", err);
+            if (isMounted && movieArr) setMovies(movieArr);
+          })
+          .finally(() => {
+            if (isMounted) setLoadingFallback(false);
+          });
+
+        return () => {
+          isMounted = false;
+        };
+      }
+
       if (movieArr) {
         setMovies(movieArr);
         setTotalPages(displayTotalPages || 1);
       }
       return;
     }
-  }, [movieArr, searchParams, user?.language, mediaType, provider, displayTotalPages, isAllProviders]);
+  }, [movieArr, searchParams, user?.language, mediaType, provider, displayTotalPages, isAllProviders, initialLang]);
 
   const router = useRouter();
   const activeProvider = searchParams.get("provider") || "tmdb";
@@ -307,6 +375,12 @@ export default function HomeGrid({
             <span className="text-amber-400 font-bold">→</span>
           </button>
         </div>
+      ) : loadingFallback ? (
+        <div className="h-[60vh] flex flex-col items-center justify-center text-white/40">
+          <p className="text-xl font-semibold tracking-tight animate-pulse">
+            Loading {typeLabel}...
+          </p>
+        </div>
       ) : movies.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
           {movies.map((movie) => (
@@ -318,12 +392,6 @@ export default function HomeGrid({
             />
           ))}
         </div>
-      ) : loadingFallback ? (
-        <div className="h-[60vh] flex flex-col items-center justify-center text-white/40">
-          <p className="text-xl font-semibold tracking-tight animate-pulse">
-            Loading {typeLabel}...
-          </p>
-        </div>
       ) : (
         <div className="h-[60vh] flex flex-col items-center justify-center text-white/40">
           <p className="text-xl font-semibold tracking-tight">
@@ -332,7 +400,7 @@ export default function HomeGrid({
         </div>
       )}
 
-      {movies.length > 0 && (
+      {!loadingFallback && movies.length > 0 && (
         <div className="mt-12 mb-8">
           <Pagination
             currentPage={currentPage}

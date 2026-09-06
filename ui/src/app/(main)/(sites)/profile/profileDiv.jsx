@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/context/AuthContext";
 import UserEditForm from "@/components/profile/UserEditForm";
+import CloneRequestSection from "@/components/profile/CloneRequestSection";
 import { useRouter } from "next/navigation";
 
 function getUserInitials(name) {
@@ -73,6 +74,11 @@ export default function ProfileDiv() {
       if (res.ok) {
         if (typeof window !== "undefined") {
           sessionStorage.removeItem("mmc_home_filters");
+          if (data.language) {
+            document.cookie = `user_lang=${encodeURIComponent(data.language)}; path=/; max-age=31536000; SameSite=Lax`;
+          } else {
+            document.cookie = "user_lang=; path=/; max-age=0; SameSite=Lax";
+          }
         }
         setUser((prev) => {
           const updated = { ...prev, ...data };
@@ -190,6 +196,9 @@ export default function ProfileDiv() {
           </div>
         </div>
       </div>
+
+      {/* Clone Collections Section */}
+      <CloneRequestSection />
 
       {/* Edit Modal Form */}
       <UserEditForm

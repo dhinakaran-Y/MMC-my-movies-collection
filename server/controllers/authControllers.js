@@ -106,6 +106,10 @@ export async function loginUser(req, res) {
     }
 
     res.cookie("token", token, cookieOptions);
+    res.cookie("user_lang", user.language || "", {
+      ...cookieOptions,
+      httpOnly: false,
+    });
     console.log("✅ [LOGIN] Cookie set with options:", cookieOptions);
     console.log("✅ [LOGIN] Token payload:", {
       id: user._id,
@@ -115,18 +119,16 @@ export async function loginUser(req, res) {
     res.json({ message: `User ${user.name} logged in successfully`, token });
   } catch (error) {
     console.error("Error logging in user:", error);
-    res
-      .status(500)
-      .json({ error: "Failed to login user", errorMessage: error.message });
+    res.status(500).json({ error: "Internal server error" });
   }
 }
 
-// get current user in me end point
+// get current user
 export async function getCurrentUser(req, res) {
   const loggedInUser = req.user;
 
   if (loggedInUser.role === "admin") {
-    console.log("Admin user logged in:", loggedInUser);
+    console.log("admin logged in:", loggedInUser);
   } else {
     console.log("Regular user logged in:", loggedInUser);
   }
@@ -139,6 +141,14 @@ export async function getCurrentUser(req, res) {
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
+    const isProd = process.env.NODE_ENV === "production";
+    res.cookie("user_lang", user.language || "", {
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+      path: "/",
+      sameSite: isProd ? "None" : "Lax",
+      secure: isProd,
+      httpOnly: false,
+    });
     res.json({ user });
   } catch (error) {
     console.error("Error fetching user:", error);
@@ -148,17 +158,19 @@ export async function getCurrentUser(req, res) {
 
 // logout
 export function logoutUser(req, res) {
-  // res.clearCookie("token", {
-  //   httpOnly: true,
-  //   sameSite: "Lax",
-  //   path: "/",
-  // });
+  const isProd = process.env.NODE_ENV === "production";
 
   res.clearCookie("token", {
     httpOnly: true,
-    sameSite: "None",
-    secure: true,
+    sameSite: isProd ? "None" : "Lax",
+    secure: isProd,
     path: "/",
+  });
+
+  res.clearCookie("user_lang", {
+    path: "/",
+    sameSite: isProd ? "None" : "Lax",
+    secure: isProd,
   });
 
   res.json({ message: "Logged out successfully" });

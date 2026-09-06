@@ -27,20 +27,18 @@ async function fetchGraphQL(query, variables = {}, revalidateSeconds = 1800) {
     });
 
     if (!res.ok) {
-      console.error(
-        `AniList GraphQL error (${res.status}):`,
-        await res.text().catch(() => "No response body"),
-      );
+      const errText = await res.text().catch(() => "No response body");
+      console.warn(`[AniList API] Service status ${res.status}:`, errText);
       return null;
     }
 
     const json = await res.json();
     if (json.errors) {
-      console.error("AniList GraphQL response errors:", json.errors);
+      console.warn("[AniList API] GraphQL response errors:", json.errors);
     }
     return json.data || null;
   } catch (error) {
-    console.error("AniList fetch error:", error);
+    console.warn("[AniList API] Fetch error:", error.message || error);
     return null;
   }
 }

@@ -140,6 +140,14 @@ export async function updateMyAccount(req, res) {
 
     if (language !== undefined) {
       updateData.language = language;
+      const isProd = process.env.NODE_ENV === "production";
+      res.cookie("user_lang", language || "", {
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+        path: "/",
+        sameSite: isProd ? "None" : "Lax",
+        secure: isProd,
+        httpOnly: false,
+      });
     }
     if (region !== undefined) {
       updateData.region = region;

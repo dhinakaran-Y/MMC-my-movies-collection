@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import CollectionMovieCard from "@/components/CollectionComponents/CollectionMovieCard";
 import CustomMovieCreateForm from "@/components/CollectionComponents/CustomMovieCreateForm";
@@ -9,6 +9,21 @@ import OttFilterBar from "@/components/CollectionComponents/OttFilterBar";
 export default function SingleCollectionPageGrid({ moviesList = [], collectionId }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const router = useRouter();
+
+  useEffect(() => {
+    const offlineItems = moviesList.filter((m) => m.isFallback);
+    if (offlineItems.length > 0) {
+      console.warn(
+        `[Provider Warning] ${offlineItems.length} item(s) in collection [${collectionId}] are currently using fallback data due to upstream provider downtime:`,
+        offlineItems.map((m) => ({
+          id: m.storedId || m.id,
+          title: m.title,
+          provider: m.provider,
+          reason: m.overview,
+        }))
+      );
+    }
+  }, [moviesList, collectionId]);
 
   const handleCustomMovieSubmit = async (formData) => {
     const res = await fetch("/api/custom-movie", {

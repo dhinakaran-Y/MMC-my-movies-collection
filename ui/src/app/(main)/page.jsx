@@ -1,8 +1,10 @@
 export const dynamic = "force-dynamic";
 
+import { cookies } from "next/headers";
 import AsideFilter from "@/components/AsideFilter";
 import HomeGrid from "@/components/HomeGrid";
 import AniListHomepage from "@/components/AniListHomepage";
+import FilteredLanguagesArr from "@/data/FilteredLanguagesArr.json";
 import {
   getShows as tvmazeGetShows,
   getGenres as tvmazeGenres,
@@ -29,6 +31,26 @@ import { tmdbFetch } from "@/lib/providers/tmdbFetch";
 
 const API_KEY = process.env.TMDB_API_KEY || "3472ccb0d97ebc192cbd0e56bd799736";
 const BASE_URL = "https://api.themoviedb.org/3";
+
+function getTvmazeLanguage(langCodeOrName) {
+  if (!langCodeOrName || langCodeOrName === "all") return "";
+  const allTvmazeLangs = tvmazeLanguages();
+  const foundByName = allTvmazeLangs.find(
+    (l) => l.toLowerCase() === langCodeOrName.toLowerCase()
+  );
+  if (foundByName) return foundByName;
+
+  const mapped = FilteredLanguagesArr.find(
+    (l) => l.language.toLowerCase() === langCodeOrName.toLowerCase()
+  );
+  if (mapped) {
+    const matched = allTvmazeLangs.find(
+      (l) => l.toLowerCase() === mapped.languageName.toLowerCase()
+    );
+    if (matched) return matched;
+  }
+  return langCodeOrName;
+}
 
 /* ── TMDB getMedia ── */
 async function getMedia(
@@ -253,6 +275,8 @@ async function getAnilistData(params) {
 
 export default async function Home({ searchParams }) {
   const params = await searchParams;
+  const cookieStore = await cookies();
+  const userLangCookie = cookieStore.get("user_lang")?.value || "";
 
   const provider = params.provider || "tmdb";
   const currentPage = Number(params.page) || 1;
@@ -354,8 +378,14 @@ export default async function Home({ searchParams }) {
 
   // ── Watchmode Provider ──
   if (provider === "watchmode") {
+    const hasExplicitLang = params.lang !== undefined;
+    const explicitLang = params.lang;
+    const resolvedLang = hasExplicitLang
+      ? (explicitLang === "all" ? "" : explicitLang)
+      : userLangCookie;
+
     const [watchmodeData, genresArr] = await Promise.all([
-      getWatchmodeData(params),
+      getWatchmodeData({ ...params, lang: resolvedLang }),
       watchmodeGenres(),
     ]);
 
@@ -366,7 +396,7 @@ export default async function Home({ searchParams }) {
       <div className="lg:h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
         <AsideFilter
           genresArr={genresArr}
-          currentLang={params.lang || ""}
+          currentLang={hasExplicitLang ? explicitLang : userLangCookie}
           currentGenre={params.genre || ""}
           currentQuery={params.query || ""}
           currentType={params.wmType === "movie" ? "movie" : "tv"}
@@ -379,6 +409,7 @@ export default async function Home({ searchParams }) {
           displayTotalPages={displayTotalPages}
           mediaType={params.wmType === "movie" ? "movie" : "tv"}
           provider="watchmode"
+          initialLang={hasExplicitLang ? explicitLang : userLangCookie}
         />
       </div>
     );
@@ -386,7 +417,14 @@ export default async function Home({ searchParams }) {
 
   // ── TVmaze Provider ──
   if (provider === "tvmaze") {
-    const tvmazeData = await getTvmazeData(params);
+    const hasExplicitLang = params.lang !== undefined;
+    const explicitLang = params.lang;
+    const tvmazePreferredLang = getTvmazeLanguage(userLangCookie);
+    const resolvedLang = hasExplicitLang
+      ? (explicitLang === "all" ? "" : explicitLang)
+      : tvmazePreferredLang;
+
+    const tvmazeData = await getTvmazeData({ ...params, lang: resolvedLang });
     const movieArr = tvmazeData.results || [];
     const displayTotalPages = tvmazeData.total_pages || 1;
 
@@ -397,7 +435,7 @@ export default async function Home({ searchParams }) {
       <div className="lg:h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
         <AsideFilter
           genresArr={genresArr}
-          currentLang={params.lang || ""}
+          currentLang={hasExplicitLang ? explicitLang : tvmazePreferredLang}
           currentGenre={params.genre || ""}
           currentQuery={params.query || ""}
           currentType="tv"
@@ -410,14 +448,19 @@ export default async function Home({ searchParams }) {
           displayTotalPages={displayTotalPages}
           mediaType="tv"
           provider="tvmaze"
+          initialLang={hasExplicitLang ? explicitLang : tvmazePreferredLang}
         />
       </div>
     );
   }
 
-  // ── TMDB Provider (default — unchanged logic) ──
+  // ── TMDB Provider (default) ──
   const isTopRated = params.topRated === "true";
-  const language = params.lang === "all" ? "" : (params.lang || "");
+  const hasExplicitLang = params.lang !== undefined;
+  const explicitLang = params.lang;
+  const language = hasExplicitLang
+    ? (explicitLang === "all" ? "" : explicitLang)
+    : userLangCookie;
   const query = params.query || "";
   const genre = params.genre || "";
   const mediaType = params.type === "tv" ? "tv" : "movie";
@@ -439,7 +482,7 @@ export default async function Home({ searchParams }) {
     <div className="lg:h-screen grid grid-cols-12 gap-3 bg-dark-body1 overflow-hidden">
       <AsideFilter
         genresArr={genresArr}
-        currentLang={language}
+        currentLang={hasExplicitLang ? explicitLang : userLangCookie}
         currentGenre={genre}
         currentQuery={query}
         currentType={mediaType}
@@ -452,6 +495,7 @@ export default async function Home({ searchParams }) {
         displayTotalPages={displayTotalPages}
         mediaType={mediaType}
         provider="tmdb"
+        initialLang={hasExplicitLang ? explicitLang : userLangCookie}
       />
     </div>
   );

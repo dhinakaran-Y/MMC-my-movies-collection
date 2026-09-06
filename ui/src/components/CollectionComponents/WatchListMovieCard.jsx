@@ -80,6 +80,22 @@ export default function WatchListMovieCard({ movie }) {
 
   const isCustom = movie.isCustom || (typeof movie.storedId === "string" && movie.storedId.startsWith("custom:"));
   const isTvmaze = movie.provider === "tvmaze" || (typeof movie.storedId === "string" && movie.storedId.startsWith("tvmaze:"));
+  const isAnilist = movie.provider === "anilist" || (typeof movie.storedId === "string" && movie.storedId.startsWith("anilist:"));
+  const isWatchmode = movie.provider === "watchmode" || (typeof movie.storedId === "string" && movie.storedId.startsWith("watchmode:"));
+  const isOmdb = movie.provider === "omdb" || (typeof movie.storedId === "string" && (movie.storedId.startsWith("omdb:") || movie.storedId.startsWith("tt")));
+
+  const providerInfo = isCustom
+    ? { name: "Custom", color: "bg-rose-500/20 text-rose-300 border-rose-500/30" }
+    : isAnilist
+      ? { name: "AniList", color: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30" }
+      : isTvmaze
+        ? { name: "TVmaze", color: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30" }
+        : isWatchmode
+          ? { name: "Watchmode", color: "bg-amber-500/20 text-amber-300 border-amber-500/30" }
+          : isOmdb
+            ? { name: "OMDb", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30" }
+            : { name: "TMDB", color: "bg-sky-500/20 text-sky-300 border-sky-500/30" };
+
   const mediaType = isTvmaze ? "tv" : (movie.mediaType || movie.media_type || (movie.first_air_date && !movie.release_date ? "tv" : "movie"));
   const mediaTitle = movie.title || movie.name || "Untitled";
   const rawId = movie.id?.toString();
@@ -352,20 +368,28 @@ export default function WatchListMovieCard({ movie }) {
   return (
     <div className="group relative flex flex-col bg-dark-body2 rounded-xl overflow-hidden border border-white/5 shadow-lg">
       {/* Top badges & Custom Controls */}
-      <div className="absolute top-2.5 left-2.5 right-2.5 z-30 flex justify-between items-center pointer-events-none">
-        {/* Media Type Badge */}
-        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-black/40 backdrop-blur-md border border-white/20 text-white/90 shadow-md">
+      <div className="absolute top-2.5 left-2.5 right-2.5 z-30 flex justify-between items-start pointer-events-none">
+        {/* Left: Media Type & Provider Badges */}
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-black/40 backdrop-blur-md border border-white/20 text-white/90 shadow-md">
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${
+                isCustom
+                  ? "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]"
+                  : isTvmaze || mediaType === "tv"
+                    ? "bg-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.8)]"
+                    : "bg-brand shadow-[0_0_6px_rgba(229,9,20,0.8)]"
+              }`}
+            />
+            {isCustom ? "Custom" : isTvmaze ? (movie.showType || "TV Series") : mediaType === "tv" ? "TV Series" : "Movie"}
+          </span>
+
+          {/* Provider Badge */}
           <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              isCustom
-                ? "bg-amber-400 shadow-[0_0_6px_rgba(251,191,36,0.8)]"
-                : isTvmaze || mediaType === "tv"
-                  ? "bg-purple-400 shadow-[0_0_6px_rgba(192,132,252,0.8)]"
-                  : "bg-brand shadow-[0_0_6px_rgba(229,9,20,0.8)]"
-            }`}
-          />
-          {isCustom ? "Custom" : isTvmaze ? (movie.showType || "TV Series") : mediaType === "tv" ? "TV Series" : "Movie"}
-        </span>
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-bold uppercase tracking-wider backdrop-blur-md border shadow-md ${providerInfo.color}`}>
+            {providerInfo.name}
+          </span>
+        </div>
 
         {/* TVmaze Rating Badge */}
         {isTvmaze && typeof movie.rating === "number" && (

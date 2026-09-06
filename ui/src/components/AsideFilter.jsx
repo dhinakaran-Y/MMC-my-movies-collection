@@ -135,15 +135,34 @@ export default function AsideFilter({
     })),
   ];
 
-  const activeLang = searchParams.has("lang")
-    ? (searchParams.get("lang") === "all" ? "" : searchParams.get("lang"))
-    : "";
+  const providerSupportsLanguage = !isAnilist && !isOmdb && !isAllProviders;
+
+  const getUserTvmazeLang = (code) => {
+    if (!code || code === "all") return "";
+    const langObj = FilteredLanguagesArr.find(
+      (l) => l.language.toLowerCase() === code.toLowerCase()
+    );
+    return langObj?.languageName || code;
+  };
+
+  const defaultUserLang = isTvmaze
+    ? getUserTvmazeLang(user?.language)
+    : (user?.language || "");
+
+  const rawLang = searchParams.has("lang")
+    ? searchParams.get("lang")
+    : (providerSupportsLanguage
+        ? (defaultUserLang || currentLang || "all")
+        : "all");
+
+  const activeLang = rawLang === "all" ? "" : rawLang;
 
   const currentLanguageOptions = isTvmaze
     ? tvmazeLanguageOptions
     : languageOptions;
 
   const defaultValue =
+    currentLanguageOptions.find((opt) => opt.value === rawLang) ||
     currentLanguageOptions.find((opt) => opt.value === activeLang) ||
     currentLanguageOptions[0];
 
@@ -555,9 +574,9 @@ export default function AsideFilter({
               resetQs = `?provider=anilist&type=${currentAnilistType}`;
               setIsAdvancedTagsOpen(false);
             } else if (isWatchmode) {
-              resetQs = `?provider=watchmode&region=US`;
+              resetQs = `?provider=watchmode&lang=all&region=US`;
             } else if (isTvmaze) {
-              resetQs = `?provider=tvmaze`;
+              resetQs = `?provider=tvmaze&lang=all`;
             } else {
               resetQs = isTV
                 ? `?type=tv&lang=all&region=${userRegion}&watchOption=flatrate`

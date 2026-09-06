@@ -9,6 +9,7 @@ import adminRoutes from "#routers/admin/users.routes";
 import collectionRoutes from "#routers/collections/collections.routes";
 import moviesRoutes from "#routers/movies/movies.routes";
 import customMovieRoutes from "#routers/customMovie/customMovie.routes";
+import cloneRequestRoutes from "#routers/cloneRequest/cloneRequest.routes";
 
 const router = express.Router();
 
@@ -31,6 +32,9 @@ router.use(moviesRoutes);
 
 // custom movies routes
 router.use(customMovieRoutes);
+
+// clone request routes
+router.use(cloneRequestRoutes);
 
 // router.get("/ss", async (req, res) => {
 //   try {

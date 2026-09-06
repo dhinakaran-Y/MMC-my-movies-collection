@@ -4,7 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useAuth } from "./context/AuthContext";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 function getUserInitials(name) {
   if (!name || typeof name !== "string") return "U";
@@ -19,6 +19,31 @@ export default function Header() {
   const { user, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [notifCount, setNotifCount] = useState(0);
+
+  useEffect(() => {
+    if (!user) return;
+
+    let isMounted = true;
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch("/api/clone-requests/notifications", { credentials: "include" });
+        if (res.ok && isMounted) {
+          const data = await res.json();
+          setNotifCount(data.count || 0);
+        }
+      } catch (err) {
+        // silently ignore
+      }
+    };
+
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, [user]);
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -80,7 +105,7 @@ export default function Header() {
           {loading ? (
             <div className="w-9 h-9 rounded-full bg-white/10 animate-pulse" />
           ) : user ? (
-            <Link href={"/profile"} aria-label="Profile">
+            <Link href={"/profile"} aria-label="Profile" className="relative">
               {!imageError && user?.profileImage ? (
                 <Image
                   src={user.profileImage}
@@ -96,6 +121,11 @@ export default function Header() {
                 <div className="w-9 h-9 rounded-full bg-brand shadow flex justify-center items-center font-bold text-white text-xs tracking-wider hover:scale-105 transition-transform">
                   {getUserInitials(user?.name)}
                 </div>
+              )}
+              {notifCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-amber-500 text-[10px] font-bold text-dark-body1 rounded-full border-2 border-dark-body1 shadow-lg animate-pulse">
+                  {notifCount > 9 ? "9+" : notifCount}
+                </span>
               )}
             </Link>
           ) : (

@@ -47,6 +47,14 @@ export default function AuthContextProvider({ children }) {
       const data = await response.json();
       console.log("✅ [refreshSession] User data received:", data);
 
+      if (typeof document !== "undefined") {
+        if (data.user?.language) {
+          document.cookie = `user_lang=${encodeURIComponent(data.user.language)}; path=/; max-age=31536000; SameSite=Lax`;
+        } else {
+          document.cookie = "user_lang=; path=/; max-age=0; SameSite=Lax";
+        }
+      }
+
       setUser(data.user);
       return data.user;
     } catch (error) {
@@ -68,6 +76,9 @@ export default function AuthContextProvider({ children }) {
   }, [refreshSession]);
 
   const login = async () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("mmc_home_filters");
+    }
     const me = await refreshSession();
     console.log("auth context logging me: ", me);
 
@@ -87,6 +98,13 @@ export default function AuthContextProvider({ children }) {
       });
     } catch (error) {
       console.error("Error logging out:", error);
+    }
+
+    if (typeof document !== "undefined") {
+      document.cookie = "user_lang=; path=/; max-age=0; SameSite=Lax";
+    }
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("mmc_home_filters");
     }
 
     setUser(null);

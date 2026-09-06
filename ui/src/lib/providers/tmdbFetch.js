@@ -60,10 +60,12 @@ export async function tmdbFetch(fullUrl, options = {}) {
     return await fetch(fullUrl, options);
   }
 
-  // Server-side: Try direct fetch with a tight timeout first
+  let lastStatus = 500;
+
+  // Server-side: Try direct fetch with timeout first
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const timeoutId = setTimeout(() => controller.abort(), 3500);
 
     const res = await fetch(fullUrl, {
       ...options,
@@ -71,9 +73,11 @@ export async function tmdbFetch(fullUrl, options = {}) {
     });
     clearTimeout(timeoutId);
 
-    if (res.ok) {
+    // If successful or definitive client error (e.g. 404 Not Found), return immediately
+    if (res.ok || (res.status >= 400 && res.status < 500)) {
       return res;
     }
+    lastStatus = res.status;
   } catch {
     // Direct fetch timed out or network error — failover to direct IP edges
   }
@@ -85,9 +89,10 @@ export async function tmdbFetch(fullUrl, options = {}) {
   for (const ip of WORKING_IPS) {
     try {
       const res = await fetchViaIp(pathAndQuery, ip, 3500);
-      if (res.ok) {
+      if (res.ok || (res.status >= 400 && res.status < 500)) {
         return res;
       }
+      lastStatus = res.status;
     } catch {
       // Continue to next IP
     }
@@ -95,7 +100,7 @@ export async function tmdbFetch(fullUrl, options = {}) {
 
   return {
     ok: false,
-    status: 500,
+    status: lastStatus || 500,
     json: async () => ({ results: [], total_pages: 0 }),
   };
 }
